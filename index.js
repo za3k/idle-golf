@@ -495,6 +495,7 @@ function respawnBall(ball) {
     if (!ball) {
         ball = { combo: 1 }
         state.balls.push(ball)
+        state.numbers.numBallsCurrent = state.balls.length
     }
 
     // TODO: Randomize the starting position a bit
@@ -652,7 +653,7 @@ function redraw() {
     drawCircle(state.level.hole, 0.2*units, "black")
 
     // Draw a ring around the manually active ball
-    if (state.manualBall) {
+    if (state.numbers.numBallsMax > 1 && state.manualBall && mag(state.manualBall.vel) == 0) {
         drawCircle(state.manualBall.pt, 0.2*units, "rgba(255, 122, 122, 0.8)")
     }
 
@@ -715,7 +716,7 @@ $("button").on("click", (e) => {
 
     state.numbers[for_] = upgrades[0][1]
     state.numbers.jackpot = Math.max(state.numbers.jackpot, state.numbers.jackpotMinimum)
-    //while (state.numbers.numBallsMax > state.numbers.numBallsCurrent) respawnBall(null)
+    while (state.numbers.numBallsMax > state.numbers.numBallsCurrent) respawnBall(null)
 
     upgrades.splice(0, 1)
 
