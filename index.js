@@ -1,9 +1,9 @@
-const screensaverMode = new URLSearchParams(window.location.search).has("screensaver")
+// TODO: Ball changes color on hole-in-one, increased multiplier
+// TODO: Upgrade for more multiplier
+// TODO: Upgrade to slow down multiplier loss per putt
 
-const FRICTION_ON = !screensaverMode
 const IMPULSE = 2
 const FRICTION_SLOWDOWN = -2 // Scale this with impulse.
-
 
 function scale(k, v1) {
     return { x: k*v1.x, y: k*v1.y }
@@ -69,30 +69,62 @@ const state = {
     },
     numbers: {
         money: 0,
+            // TODO: Buy upgrades
         jackpot: 0,
+            // TODO: Increase on every putt
+            // TODO: Win on hole-in-one
+        numBallsCurrent: 1,
+            // TODO: Make balls respawn non-instantly, add numbers for that
         numBallsMax: 1,
+            // TODO: When this increases, add a ball, actually test multiball
         friction: 1,
-        jackpotMinimum: 3,
-        holePayout: 3,
-        manualPuttMaxPower: 2,
-        autoPutt: false,
-        autoPuttCooldown: 3,
-        autoPuttPower: 3,
-        autoPuttAim: 3,
+            // TODO: Make this higher to start
+        jackpotEnabled: false,
+            // TODO: Hide display, buy options until enabled
+        jackpotMinimum: 0,
+            // TODO: On winning the jackpot, reset to this value
+        jackpotRate: 1,
+            // TODO: This is how much the jackpot should increase by on a putt
+        holePayout: 1,
+        manualPuttMaxPower: 1,
+        autoPuttEnabled: false,
+        autoPuttCooldown: 10,
+        autoPuttPower: 0.1,
+        autoPuttAim: 1,
+        globalMult: 1,
+        comboEnabled: false,
+        comboReductionPerPutt: 1,
+        comboIncreasePerSink: 1,
     },
     upgrades: {
         numBallsMax: [ 
             [2, 2],
         ], friction: [
+            [1, 0],
         ], jackpotMinimum: [
+            [1, 1],
+        ], jackpotRate: [
+            [10, 2],
         ], holePayout: [
+            [10, 2],
+            [20, 3],
+            [30, 4],
+            [40, 5],
         ], manualPuttMaxPower: [
-        ], autoPutt: [
+            [40, 1.5],
+            [80, 2],
+        ], autoPuttEnabled: [
             [3, true]
         ], autoPuttCooldown: [
         ], autoPuttPower: [
         ], autoPuttAim: [
+        ], jackpotEnabled: [
+        ], globalMult: [
+        ], comboEnabled: [
+        ], comboReductionPerPutt: [
+        ], comboIncreasePerSink: [
         ],
+
     },
     won: false,
 }
@@ -137,7 +169,6 @@ function toLevel(pt) {
         y: ((pt[1]/units) - offsetUnits.y) / level2units,
     }
 }
-
 
 function mirror(thing, mirror) {
     return add(mirror, sub(mirror, thing))
@@ -361,11 +392,60 @@ function physicsTick(elapsed) {
 
         // Land a ball in the hole
         if (dist(ball.pt, state.level.hole) < 0.10) {
-            ball.pt = {...state.level.start}
-            ball.vel = {x:0, y:0}
-            // TODO: Score stuff
-            updateMouseMode()
+            ballSunk(ball)
         }
+
+        if (speed == 0) {
+            ballStopped(ball)
+        }
+    }
+}
+
+function displayTop(msg, color) {
+    // Display a message at the top of the screen, which automatically fades and deletes itself later, while drifting up
+    const e = $(`<div class="topMessage">${msg}</div>`)
+    if (color) e.css({"color": color})
+    $("#playarea").append(e)
+    setTimeout(() => e.remove(), 4000)
+}
+
+function displayBall(ball, msg, color) {
+    // Display a little message of the ball, which automatically fades and deletes itself later, while drifting up.
+    const e = $(`<div class="ballMessage">${msg}</div>`)
+    if (color) e.css({"color": color})
+    const ballPos = toPx(ball.pt)
+    e.css({
+        left: `${ballPos[0]}px`,
+        top: `${ballPos[1]}px`,
+    })
+    $("#playarea").append(e)
+    setTimeout(() => e.remove(), 4000)
+}
+
+function respawnBall(ball) {
+    // TODO: Randomize the starting position a bit
+    ball.pt = {...state.level.start}
+    ball.vel = {x:0, y:0}
+}
+function ballSunk(ball) {
+    const gain = state.numbers.holePayout
+    state.numbers.money += gain
+
+    if (ball.numPutts == 1 && state.numbers.jackpot) { // Hole-in-one
+        gain *= 2
+        displayTop(`Hole-in-one! +$${gain}`, "gold")
+        displayTop(`Jackpot! +$${state.numbers.jackpot}`, "gold")
+    } else {
+        displayTop(`Hole Complete +$${gain}`, "green")
+    }
+
+    respawnBall(ball) // TODO: Make it not instant later
+    updateMouseMode()
+}
+function ballStopped(ball) {
+    if (state.numbers.jackpotEnabled) {
+        state.numbers.jackpot += state.numbers.jackpotRate
+        displayBall(`+$${state.numbers.jackpotRate} jackpot`, "gold")
     }
 }
 
@@ -430,9 +510,13 @@ function redraw() {
     // Draw the hole
     drawCircle(state.level.hole, 0.2*units, "black")
 
+    // Draw a ring around the manually active ball
+    if (state.manualBall) {
+        drawCircle(state.manualBall.pt, 0.2*units, "rgba(255, 122, 122, 0.8)")
+    }
+
     // Draw the balls
     for (const ball of state.balls) {
-        // TODO: Draw the manually active one in another color
         drawCircle(ball.pt, 0.1*units, "white")
     }
 
@@ -457,7 +541,6 @@ function redraw() {
     for (const number in state.numbers) {
         $(`.${number}`).text(state.numbers[number])
     }
-    $(`.autoPutt`).text(state.numbers.autoPutt ? "yes" : "no")
 }
 
 updateMouseMode()

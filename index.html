@@ -7,38 +7,50 @@
     </head>
     <body>
         <div>
-            <canvas id="playarea"></canvas>
+            <div id="playarea">
+                <canvas id="canvas"></canvas>
+            </div>
             <div id="idle">
-                <div class="info"><label>Money</label>$<span class="money">0</span></div>
-                <div class="info"><label>Hole-in-One Jackpot</label>$<span class="jackpot">0</span></div>
-                <div class="info"><label>Balls</label><span class="numBallsCurrent">1</span>/<span class="numBallsMax">1</span></div>
+                <div class="info"><label>Money</label>$<span class="money">-</span></div>
+                <div class="info" requires="jackpotEnabled"><label>Jackpot</label>$<span class="jackpot">-</span></div>
+                <div class="info"><label>Balls</label><span class="numBallsCurrent">-</span>/<span class="numBallsMax">-</span></div>
                 <br>
-                <div class="info debug"><label>Friction</label><span class="friction">1</span></div>
-                <div class="info debug"><label>Jackpot Minimum</label><span class="jackpotEnabled">1</span></div>
-                <div class="info debug"><label>Jackpot Minimum</label><span class="jackpotMinimum">1</span></div>
-                <div class="info debug"><label>Jackpot Rate</label><span class="jackpotRate">1</span></div>
-                <div class="info debug"><label>Hole Payout</label><span class="holePayout">1</span></div>
-                <div class="info debug"><label>Manual Putt Max Power</label><span class="manualPuttMaxPower">1</span></div>
-                <div class="info debug"><label>Auto-Putt Enable</label><span class="autoPuttEnabled">1</span></div>
-                <div class="info debug"><label>Auto-Putt Cooldown</label><span class="autoPuttCooldown">1</span></div>
-                <div class="info debug"><label>Auto-Putt Power</label><span class="autoPuttPower">1</span></div>
-                <div class="info debug"><label>Auto-Putt Aim</label><span class="autoPuttAim">1</span></div>
+                <div class="info debug"><label>Jackpot</label>$<span class="jackpot">-</span></div>
+                <div class="info debug"><label>Friction</label><span class="friction">-</span></div>
+                <div class="info debug"><label>Jackpot Minimum</label><span class="jackpotEnabled">-</span></div>
+                <div class="info debug"><label>Jackpot Minimum</label><span class="jackpotMinimum">-</span></div>
+                <div class="info debug"><label>Jackpot Rate</label><span class="jackpotRate">-</span></div>
+                <div class="info debug"><label>Hole Payout</label><span class="holePayout">-</span></div>
+                <div class="info debug"><label>Manual Putt Max Power</label><span class="manualPuttMaxPower">-</span></div>
+                <div class="info debug"><label>Auto-Putt Enable</label><span class="autoPuttEnabled">-</span></div>
+                <div class="info debug"><label>Auto-Putt Cooldown</label><span class="autoPuttCooldown">-</span></div>
+                <div class="info debug"><label>Auto-Putt Power</label><span class="autoPuttPower">-</span></div>
+                <div class="info debug"><label>Auto-Putt Aim</label><span class="autoPuttAim">-</span></div>
+                <div class="info debug"><label>Global Multiplier</label><span class="globalMult">-</span></div>
+                <div class="info debug"><label>Combo Enabled</label><span class="comboEnabled">-</span></div>
+                <div class="info debug"><label>Combo Loss Per Putt</label><span class="comboReductionPerPutt">-</span></div>
+                <div class="info debug"><label>Combo Gain Per Hole-in-1</label><span class="comboIncreasePerSink">-</span></div>
                 <h2>Upgrades</h2>
                 <button for="manualPuttMaxPower">Increase Manual Putt Max Power</button>
                 <br>
                 <button for="holePayout">Increase Hole Payout</button>
-                <br>
+                <button for="globalMult">Global Money Multiplier</button>
                 <button for="jackpotEnabled">Activate Jackpot</button>
-                <button for="jackpotMinimum">Increase Jackpot Minimum</button>
-                <button for="jackpotRate">Increase Jackpot Rate</button>
+                <button for="jackpotMinimum" requires="jackpotEnabled">Increase Jackpot Minimum</button>
+                <button for="jackpotRate" requires="jackpotEnabled">Increase Jackpot Rate</button>
+                <br>
+                <button for="comboEnabled">Combos</button>
+                <button for="comboReductionPerPutt" requires="comboEnabled">Reduce Combo Loss</button>
+                <button for="comboIncreasePerSink" requires="comboEnabled">Increase Combo Gain</button>
+                <br>
                 <br>
                 <button for="numBallsMax">+1 Simultaneous Ball</button>
                 <button for="friction">Decrease Friction</button>
                 <br>
                 <button for="autoputtEnabled">Auto-Putt</button>
-                <button for="autoPuttPower">Increase Auto-Putt Power</button>
-                <button for="autoPuttCooldown">Decrease Auto-Putt Cooldown</button>
-                <button for="autoPuttAim">Improve Auto-Putt Aim</button>
+                <button for="autoPuttPower" requires="autoPuttEnabled">Increase Auto-Putt Power</button>
+                <button for="autoPuttCooldown" requires="autoPuttEnabled">Decrease Auto-Putt Cooldown</button>
+                <button for="autoPuttAim" requires="autoPuttEnabled">Improve Auto-Putt Aim</button>
             </div>
         </div>
         <footer><b>Idle Golf</b> was written by Zachary <a href="https://za3k.com">"za3k"</a> Vance as part of <a href="https://za3k.com/hackaday">hack-a-day</a>, a challenge to make one new project every day in November. The source code is available <a href="https://github.com/za3k/idle-golf">on github</a>.</footer>

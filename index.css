@@ -26,7 +26,51 @@ body > div {
 
 #playarea {
     flex: 1 1;
+    position: relative;
+}
+
+canvas {
+    height: 100%;
+    width: 100%;
     min-width: 0;
+}
+
+.topMessage {
+    position: absolute;
+    top: 80px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    animation-name: fadeUp;
+    animation-duration: 4s;
+    font-size: 25px;
+    font-family: sans-serif;
+    font-weight: bold;
+    opacity: 0;
+}
+
+.ballMessage {
+    position: absolute;
+    width: 20rem;
+    text-align: center;
+    transform: translateX(-10rem);
+    animation-name: fadeUp;
+    animation-duration: 4s;
+    font-size: 12px;
+    font-family: sans-serif;
+    font-weight: bold;
+    opacity: 0;
+}
+
+@keyframes fadeUp {
+    from { 
+        opacity: 1; 
+        transform: translate(-10rem, -1em);
+    }
+    to {
+        opacity: 0;
+        transform: translate(-10rem, -80px);
+    }
 }
 
 #idle {
