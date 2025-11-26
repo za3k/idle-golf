@@ -35,6 +35,10 @@ canvas {
     min-width: 0;
 }
 
+.topMessage, .ballMessage, button {
+    user-select: none;
+}
+
 .topMessage {
     position: absolute;
     top: 80px;

@@ -1,4 +1,5 @@
-const IMPULSE = 6
+const MANUAL_IMPULSE = 2
+const AUTO_IMPULSE = 3
 const FRICTION_SLOWDOWN = 1 // Scale this with impulse.
 
 // Equal-size ball combo merging -- would require collision, probably won't do
@@ -82,7 +83,7 @@ const state = {
             // DONE: Make this higher to start
         jackpotEnabled: false,
             // DONE: Hide display, buy options until enabled
-        manualPuttMax: 1,
+        manualPuttMax: 5,
         jackpotMinimum: 0,
             // DONE: On winning the jackpot, reset to this value
             // DONE: On upgrading the minimum, set it to this value
@@ -93,9 +94,9 @@ const state = {
             // DONE: Actually restrict putt power
         autoPuttEnabled: false,
             // DONE: Do auto-putts
-        autoPuttCooldown: 8,
+        autoPuttCooldown: 4,
             // DONE: Have a cooldown
-        autoPuttPower: 0.1,
+        autoPuttPower: 1,
             // DONE: Use this instead of a const
         autoPuttAim: 0.5,
             // DONE: Use the direction of the hole, plus a random offset
@@ -107,6 +108,7 @@ const state = {
         comboIncreasePerSink: 1,
             // DONE: Increase combo on hole-in-one (per ball)
         won: false,
+        holeSize: 0.1,
     },
     lastAutoPutt: new Date(),
     upgrades: {
@@ -121,6 +123,7 @@ const state = {
             [2, 9],
             [2, 10],
             [2, 20],
+            [2, 40],
         ], friction: [
             [1, 0.8],
             [1, 0.7],
@@ -150,17 +153,21 @@ const state = {
             [30, 4],
             [40, 5],
         ], manualPuttPower: [
-            [40, 1.5],
-            [80, 2],
+            [1, 1.5],
+            [1, 2],
+            [1, 3],
+            [1, 4],
+            [1, 5],
+        /*
         ], manualPuttMax: [
             [1, 2],
             [2, 3],
             [3, 4],
             [4, 5],
+        */
         ], autoPuttEnabled: [
             [3, true]
         ], autoPuttCooldown: [
-            [1, 4],
             [1, 2],
             [1, 1],
             [1, .5],
@@ -168,11 +175,11 @@ const state = {
             [1, .1],
             [1, .01],
         ], autoPuttPower: [
-            [1, 0.2],
-            [1, 0.3],
-            [1, 0.4],
-            [1, 0.5],
-            [1, 1],
+            [1, 2],
+            [1, 3],
+            [1, 4],
+            [1, 5],
+            [1, 10],
         ], autoPuttAim: [
             [1, 0.4],
             [1, 0.3],
@@ -201,6 +208,18 @@ const state = {
             [1, 16],
         ], won: [
             [1000000, true],
+        ], holeSize: [
+            [1, 0.15],
+            [1, 0.2],
+            [1, 0.3],
+            [1, 0.4],
+            [1, 0.5],
+            [1, 1],
+            [1, 2],
+            [1, 3],
+            [1, 4],
+            [1, 5],
+            [1, 10],
         ],
 
     },
@@ -325,7 +344,7 @@ function manualPutt() {
     // Instantaneously impart velocity
     const ball = state.manualBall
     const impulse = limitMag(sub(state.mouse.pt, ball.pt), state.numbers.manualPuttMax)
-    ball.vel = scale(-IMPULSE * state.numbers.manualPuttPower, impulse)
+    ball.vel = scale(-MANUAL_IMPULSE * state.numbers.manualPuttPower, impulse)
     ball.numPutts++
 
     updateMouseMode()
@@ -469,7 +488,7 @@ function physicsTick(elapsed) {
         ball.vel = scale(speed, finalDir)
 
         // Land a ball in the hole
-        if (dist(ball.pt, state.level.hole) < 0.10) {
+        if (dist(ball.pt, state.level.hole) < state.numbers.holeSize) {
             ballSunk(ball)
         }
 
@@ -508,9 +527,9 @@ function autoPutt() {
     const randomOffset = randRange(-1, 1) * Math.PI * state.numbers.autoPuttAim
     const actualDir = rotate(perfectDir, randomOffset)
     const speed = state.numbers.autoPuttPower * randRange(0.5, 1)
-    const impulse = scale(IMPULSE * speed, actualDir)
+    const impulse = scale(-AUTO_IMPULSE * speed, actualDir)
 
-    ball.vel = scale(-IMPULSE * state.numbers.manualPuttPower, impulse)
+    ball.vel = impulse
     ball.numPutts++
 
     updateMouseMode()
@@ -544,7 +563,7 @@ function insidePoly(pt, poly) {
     const ret = numIntersections % 2 == 1
     if (!ret) {
         console.log("Out of bounds", pt, poly)
-        debugger;
+        //debugger;
     }
     return ret
 }
@@ -561,7 +580,7 @@ setInterval(() => {
     if (topQueue.length == 0) return
     const next = topQueue.shift()
     if (next) _displayTop.apply(null, next)
-}, 1000)
+}, 200)
 function _displayTop(msg, color) {
     // Display a message at the top of the screen, which automatically fades and deletes itself later, while drifting up
     const e = $(`<div class="topMessage">${msg}</div>`)
@@ -601,7 +620,7 @@ function bumpJackpot(ball) {
     if (state.numbers.jackpotEnabled) {
         const bump = state.numbers.jackpotRate * state.numbers.globalMult
         state.numbers.jackpot += bump
-        displayBall(ball, `+$${bump} jackpot`, "gold")
+        displayBall(ball, `+$${bump} in jackpot`, "gold")
     }
 }
 function ballSunk(ball) {
@@ -681,6 +700,7 @@ function updateRequired() {
             $(`[requires=${k}]`).toggle(v)
         }
     }
+    $(`[requires=multiball]`).toggle(state.numbers.numBallsMax > 1)
 }
 
 function redraw() {
@@ -696,7 +716,7 @@ function redraw() {
     function drawCircle(center, rad, color) {
         ctx.beginPath()
         ctx.fillStyle = color
-        ctx.arc(...toPx(center), rad, 0, 2*Math.PI)
+        ctx.arc(...toPx(center), rad*units, 0, 2*Math.PI)
         ctx.fill()
     }
 
@@ -737,23 +757,23 @@ function redraw() {
         ctx.stroke()
         ctx.restore()
 
-        drawCircle(state.mouse.pt, 0.2*units, "red")
+        drawCircle(state.mouse.pt, 0.2, "red")
     } else if (state.mouse.mode == "plan") {
         // Visual cue that you're in putt mode
-        drawCircle(state.mouse.pt, 0.2*units, "rgba(255, 0, 0, 0.5)")
+        drawCircle(state.mouse.pt, 0.2, "rgba(255, 0, 0, 0.5)")
     }
 
     // Draw the hole
-    drawCircle(state.level.hole, 0.2*units, "black")
+    drawCircle(state.level.hole, state.numbers.holeSize * level2units, "black")
 
     // Draw a ring around the manually active ball
     if (state.numbers.numBallsMax > 1 && state.manualBall && mag(state.manualBall.vel) == 0) {
-        drawCircle(state.manualBall.pt, 0.2*units, "rgba(255, 122, 122, 0.8)")
+        drawCircle(state.manualBall.pt, 0.2, "rgba(255, 122, 122, 0.8)")
     }
 
     // Draw the balls
     for (const ball of state.balls) {
-        drawCircle(ball.pt, 0.1*units, "white")
+        drawCircle(ball.pt, 0.1, "white")
     }
 
     if (state.numbers.won) {

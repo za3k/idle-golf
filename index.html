@@ -31,12 +31,15 @@
                 <div class="info debug"><label>Combo Enabled</label><span class="comboEnabled">-</span></div>
                 <div class="info debug"><label>Combo Loss Per Putt</label><span class="comboReductionPerPutt">-</span></div>
                 <div class="info debug"><label>Combo Gain Per Hole-in-1</label><span class="comboIncreasePerSink">-</span></div>
+                <div class="info debug"><label>Hole Size</label><span class="holeSize">-</span></div>
                 <h2>Upgrades</h2>
-                <button for="manualPuttMax"><span class="desc">Max Putt</span> <span class="details"></span></button>
+                
+                <!--<button for="manualPuttMax"><span class="desc">Max Putt</span> <span class="details"></span></button>-->
                 <button for="manualPuttPower"><span class="desc">Putt Power</span> <span class="details"></span></button>
                 <br>
                 <button for="numBallsMax"><span class="desc">Multi-Balls</span> <span class="details"></span></button>
                 <button for="friction"><span class="desc">Friction</span> <span class="details"></span></button>
+                <button for="holeSize"><span class="desc">Hole Size</span> <span class="details"></span></button>
                 <br>
                 <button for="holePayout"><span class="desc">Hole Payout</span> <span class="details"></span></button>
                 <button for="globalMult"><span class="desc">Global Money Multiplier</span> <span class="details"></span></button>
@@ -49,7 +52,7 @@
                 <button for="comboReductionPerPutt" requires="comboEnabled"><span class="desc">Combo Loss</span> <span class="details"></span></button>
                 <button for="comboIncreasePerSink" requires="comboEnabled"><span class="desc">Combo Gain</span> <span class="details"></span></button>
                 <br>
-                <button for="autoPuttEnabled"><span class="desc">Unlock Auto-Putt</span> <span class="details"></span></button>
+                <button for="autoPuttEnabled" requires="multiball"><span class="desc">Unlock Auto-Putt</span> <span class="details"></span></button>
                 <button for="autoPuttPower" requires="autoPuttEnabled"><span class="desc">Increase Auto-Putt Power</span> <span class="details"></span></button>
                 <button for="autoPuttCooldown" requires="autoPuttEnabled"><span class="desc">Decrease Auto-Putt Cooldown</span> <span class="details"></span></button>
                 <button for="autoPuttAim" requires="autoPuttEnabled"><span class="desc">Improve Auto-Putt Aim</span> <span class="details"></span></button>
