@@ -61,13 +61,11 @@ const state = {
             { x: 10, y: 0 },
         ],
         start: {
-            x: 13,
-            y: 1,
+            x: 13, y: 1.1,
             //x: 4, y: 11.1,
         },
         hole: {
-            x: 3,
-            y: 11,
+            x: 3,  y: 11,
         },
     },
     numbers: {
@@ -124,7 +122,6 @@ const state = {
             [2, 10],
             [2, 20],
         ], friction: [
-            [1, 0],
             [1, 0.8],
             [1, 0.7],
             [1, 0.6],
@@ -166,6 +163,10 @@ const state = {
             [1, 4],
             [1, 2],
             [1, 1],
+            [1, .5],
+            [1, .25],
+            [1, .1],
+            [1, .01],
         ], autoPuttPower: [
             [1, 0.2],
             [1, 0.3],
@@ -589,8 +590,10 @@ function respawnBall(ball) {
         state.numbers.numBallsCurrent = state.balls.length
     }
 
-    // TODO: Randomize the starting position a bit
-    ball.pt = {...state.level.start}
+    var pt = {...state.level.start}
+    const offset = scale(randRange(0, 1), unitAngle(randRange(0, 2*Math.PI)))
+
+    ball.pt = add(pt, offset)
     ball.vel = {x:0, y:0}
     ball.numPutts = 0
 }
