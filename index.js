@@ -1,5 +1,6 @@
-const IMPULSE = 2
-const FRICTION_SLOWDOWN = -2 // Scale this with impulse.
+const IMPULSE = 1
+const FRICTION_SLOWDOWN = -4 // Scale this with impulse.
+const MAX_DRAW = 5
 
 // Equal-size ball combo merging -- would require collision, probably won't do
 
@@ -17,6 +18,9 @@ function vec2angle(vec) { return Math.atan2(vec.y, vec.x) }
 function unitAngle(rads) { return { x: Math.cos(rads), y: Math.sin(rads) } }
 function rotate(vec, rads) {
     return scale(mag(vec), unitAngle(vec2angle(vec) + rads))
+}
+function limitMag(v1, maxMag) {
+    return scale(Math.min(mag(v1), maxMag), unitVector(v1))
 }
 
 function assert(cond, error) {
@@ -81,7 +85,7 @@ const state = {
         jackpotRate: 1,
             // DONE: This is how much the jackpot should increase by on a putt
         holePayout: 1,
-        manualPuttMaxPower: 1,
+        manualPuttPower: 1,
             // TODO: Actually restrict putt power
         autoPuttEnabled: false,
             // TODO: Do auto-putts
@@ -114,7 +118,7 @@ const state = {
             [20, 3],
             [30, 4],
             [40, 5],
-        ], manualPuttMaxPower: [
+        ], manualPuttPower: [
             [40, 1.5],
             [80, 2],
         ], autoPuttEnabled: [
@@ -255,8 +259,8 @@ function manualPutt() {
 
     // Instantaneously impart velocity
     const ball = state.manualBall
-    const impulse = sub(state.mouse.pt, ball.pt)
-    ball.vel = scale(-IMPULSE, impulse)
+    const impulse = limitMag(sub(state.mouse.pt, ball.pt), MAX_DRAW)
+    ball.vel = scale(-IMPULSE * state.numbers.manualPuttPower, impulse)
     ball.numPutts++
 
     updateMouseMode()
@@ -611,7 +615,9 @@ function redraw() {
         ctx.moveTo(...toPx(ball.pt))
         // Find the mirror fo the mouse
         const target = mirror(state.mouse.pt, ball.pt)
-        ctx.lineTo(...toPx(target))
+        const move = sub(target, ball.pt)
+        const newTarget = add(ball.pt, limitMag(move, MAX_DRAW))
+        ctx.lineTo(...toPx(newTarget))
         ctx.stroke()
         ctx.restore()
 
