@@ -98,8 +98,7 @@ const state = {
             // TODO: Reduce combo on putt (minimum x1)
         comboIncreasePerSink: 1,
             // TODO: Increase combo on hole-in-one (per ball)
-        winEnabled: false,
-            // DONE
+        won: false,
     },
     upgrades: {
         numBallsMax: [ 
@@ -130,12 +129,11 @@ const state = {
             [100, true],
         ], comboReductionPerPutt: [
         ], comboIncreasePerSink: [
-        ], winEnabled: [
+        ], won: [
             [1000000, true],
         ],
 
     },
-    won: false,
 }
 
 var offsetUnits = { x:0, y: 0 }
@@ -228,7 +226,7 @@ function tick() {
 
     physicsTick(elapsed/1000)
     redraw()
-    if (state.won) clearInterval(tickInterval)
+    if (state.numbers.won) clearInterval(tickInterval)
 }
 
 function updateMouseMode() {
@@ -636,7 +634,7 @@ function redraw() {
         drawCircle(ball.pt, 0.1*units, "white")
     }
 
-    if (state.won) {
+    if (state.numbers.won) {
         text = `You win!`
         ctx.font = "50px Arial";
         const size = ctx.measureText(text)
@@ -694,8 +692,4 @@ $("button").on("click", (e) => {
     upgrades.splice(0, 1)
 
     updateRequired()
-})
-$(".win").on("click", () => {
-    state.won = true 
-    $(".win").remove()
 })
