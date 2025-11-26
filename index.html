@@ -1,12 +1,46 @@
 <html>
     <head>
-        <title>Hack-a-Golf</title>
+        <title>Idle Golf</title>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
         <script src="index.js" defer></script>
         <link rel="stylesheet" href="index.css">
     </head>
     <body>
-        <canvas id="playarea"></canvas>
-        <footer><b>Hack-a-Golf</b> was written by Zachary <a href="https://za3k.com">"za3k"</a> Vance as part of <a href="https://za3k.com/hackaday">hack-a-day</a>, a challenge to make one new project every day in November. The source code is available <a href="https://github.com/za3k/hack-a-golf">on github</a>.</footer>
+        <div>
+            <canvas id="playarea"></canvas>
+            <div id="idle">
+                <div class="info"><label>Money</label>$<span class="money">0</span></div>
+                <div class="info"><label>Hole-in-One Jackpot</label>$<span class="jackpot">0</span></div>
+                <div class="info"><label>Balls</label><span class="numBallsCurrent">1</span>/<span class="numBallsMax">1</span></div>
+                <br>
+                <div class="info debug"><label>Friction</label><span class="friction">1</span></div>
+                <div class="info debug"><label>Jackpot Minimum</label><span class="jackpotEnabled">1</span></div>
+                <div class="info debug"><label>Jackpot Minimum</label><span class="jackpotMinimum">1</span></div>
+                <div class="info debug"><label>Jackpot Rate</label><span class="jackpotRate">1</span></div>
+                <div class="info debug"><label>Hole Payout</label><span class="holePayout">1</span></div>
+                <div class="info debug"><label>Manual Putt Max Power</label><span class="manualPuttMaxPower">1</span></div>
+                <div class="info debug"><label>Auto-Putt Enable</label><span class="autoPuttEnabled">1</span></div>
+                <div class="info debug"><label>Auto-Putt Cooldown</label><span class="autoPuttCooldown">1</span></div>
+                <div class="info debug"><label>Auto-Putt Power</label><span class="autoPuttPower">1</span></div>
+                <div class="info debug"><label>Auto-Putt Aim</label><span class="autoPuttAim">1</span></div>
+                <h2>Upgrades</h2>
+                <button for="manualPuttMaxPower">Increase Manual Putt Max Power</button>
+                <br>
+                <button for="holePayout">Increase Hole Payout</button>
+                <br>
+                <button for="jackpotEnabled">Activate Jackpot</button>
+                <button for="jackpotMinimum">Increase Jackpot Minimum</button>
+                <button for="jackpotRate">Increase Jackpot Rate</button>
+                <br>
+                <button for="numBallsMax">+1 Simultaneous Ball</button>
+                <button for="friction">Decrease Friction</button>
+                <br>
+                <button for="autoputtEnabled">Auto-Putt</button>
+                <button for="autoPuttPower">Increase Auto-Putt Power</button>
+                <button for="autoPuttCooldown">Decrease Auto-Putt Cooldown</button>
+                <button for="autoPuttAim">Improve Auto-Putt Aim</button>
+            </div>
+        </div>
+        <footer><b>Idle Golf</b> was written by Zachary <a href="https://za3k.com">"za3k"</a> Vance as part of <a href="https://za3k.com/hackaday">hack-a-day</a>, a challenge to make one new project every day in November. The source code is available <a href="https://github.com/za3k/idle-golf">on github</a>.</footer>
     </body>
 </html>

@@ -4,6 +4,7 @@ const FRICTION_ON = !screensaverMode
 const IMPULSE = 2
 const FRICTION_SLOWDOWN = -2 // Scale this with impulse.
 
+
 function scale(k, v1) {
     return { x: k*v1.x, y: k*v1.y }
 }
@@ -29,17 +30,19 @@ function assert(cond, error) {
 const canvas = $("canvas")[0]
 var now = new Date()
 const state = {
-    mode: "plan",
-    ball: {
-        pt: {x: 0, y: 0},
-        vel: {x: 0, y: 0}
-    },
+    balls: [
+        {
+            pt: {x: 13, y: 1},
+            vel: {x: 0, y: 0},
+            numPutts: 0,
+        },
+    ],
     mouse: {
         pt: { x: 0, y: 0 },
         holdStartTs: null,
         isHeld: 0,
+        mode: "plan",
     },
-    numPutts: 0,
     level: {
         // The level is a polygon
         border: [
@@ -64,6 +67,34 @@ const state = {
             y: 11,
         },
     },
+    numbers: {
+        money: 0,
+        jackpot: 0,
+        numBallsMax: 1,
+        friction: 1,
+        jackpotMinimum: 3,
+        holePayout: 3,
+        manualPuttMaxPower: 2,
+        autoPutt: false,
+        autoPuttCooldown: 3,
+        autoPuttPower: 3,
+        autoPuttAim: 3,
+    },
+    upgrades: {
+        numBallsMax: [ 
+            [2, 2],
+        ], friction: [
+        ], jackpotMinimum: [
+        ], holePayout: [
+        ], manualPuttMaxPower: [
+        ], autoPutt: [
+            [3, true]
+        ], autoPuttCooldown: [
+        ], autoPuttPower: [
+        ], autoPuttAim: [
+        ],
+    },
+    won: false,
 }
 
 var offsetUnits = { x:0, y: 0 }
@@ -133,7 +164,7 @@ function mouse(e) {
     } else if (e.type == "mouseup") {
         state.mouse.holdStartTs = null
         state.mouse.held = false
-        putt()
+        manualPutt()
     } else if (e.type == "touchstart") {
         state.mouse.pt = pt
         state.mouse.held = true
@@ -144,7 +175,7 @@ function mouse(e) {
     } else if ((e.type == "touchend" || e.type == "touchcancel") && e.touches.length == 0) {
         state.mouse.holdStartTs = null
         state.mouse.held = false
-        putt()
+        manualPutt()
     } else {
         debugger;
     }
@@ -157,18 +188,39 @@ function tick() {
 
     physicsTick(elapsed/1000)
     redraw()
-    if (state.mode == "won") clearInterval(tickInterval)
+    if (state.won) clearInterval(tickInterval)
 }
 
-function putt() {
-    if (state.mode != "plan") return
-    if (screensaverMode) redraw() // Clear the mouse real quick.
-    state.mode = "simulate"
+function updateMouseMode() {
+    // Called whenever the current ball is in motion, stops, or at the beginning of the game
+    if (state.manualBall && mag(state.manualBall.vel) == 0) {
+        // The current ball is a fine ball to have focused.
+        state.mouse.mode = "plan"
+    } else {
+        // Search for a new ball to switch to
+        state.mouse.mode = "simulate"
+        for (const ball of state.balls) {
+            if (mag(ball.vel) == 0) {
+                state.manualBall = ball
+                state.mouse.mode = "plan"
+                break
+            }
+        }
+    }
+
+    redraw() // Clear the mouse real quick.
+}
+
+function manualPutt() {
+    if (state.mouse.mode != "plan") return
     state.numPutts++
 
     // Instantaneously impart velocity
-    const impulse = sub(state.mouse.pt, state.ball.pt)
-    state.ball.vel = scale(-IMPULSE, impulse)
+    const ball = state.manualBall
+    const impulse = sub(state.mouse.pt, ball.pt)
+    ball.vel = scale(-IMPULSE, impulse)
+
+    updateMouseMode()
 }
 
 function lineSegments(poly) {
@@ -186,35 +238,6 @@ function slope(seg) {
     const m = dy/dx
     const b = y1 - m*x1
     return [m, b]
-}
-
-function insidePoly(pt, poly) {
-    var numIntersections = 0
-    for (const seg of lineSegments(poly)) {
-        // Does a ray going due +X from the point intersect the segment?
-        const [m, b] = slope(seg)
-        const y = pt.y
-        var intercepts = false
-
-        if (seg[0].y > y && seg[1].y > y) intercepts = false
-        else if (seg[0].y < y && seg[1].y < y) intercepts = false
-        else if (Number.isFinite(m)) {
-            if (m == 0) intercepts = false // Ignore horizontal case
-            else {
-                const x = (y - b)/m
-                intercepts = x > pt.x
-            }
-        } else if (Number.isNaN(m)) 
-            intercepts = false // This is a dumb case, ignore it
-        // seg goes up and down
-        else 
-            intercepts = seg[0].x > pt.x
-
-        console.log(pt, seg, intercepts)
-        if (intercepts) numIntersections++
-    }
-
-    return numIntersections % 2 == 1
 }
 
 function intersect(seg1, seg2) {
@@ -269,7 +292,6 @@ function doCollision(moveVector, wall) {
     // The move intersects the given wall. Elastically collide off it, and return the post-collision moveVector, assuming no other collisions.
     const [start, end1] = moveVector
     const mid = intersect(moveVector, wall)
-    console.log(moveVector, wall, mid)
 
     const remainingDist = dist(start, end1) - dist(start, mid)
 
@@ -288,63 +310,62 @@ function doCollision(moveVector, wall) {
 }
 
 function physicsTick(elapsed) {
-    if (state.mode != "simulate") return
+    for (const ball of state.balls) {
+        assert(!Number.isNaN(ball.pt.x))
+        assert(!Number.isNaN(ball.vel.x))
+        const move = scale(elapsed, ball.vel)
 
-    // Update the ball
-    const move = scale(elapsed, state.ball.vel)
-    var pos = state.ball.pt
-    var target = add(state.ball.pt, move)
-    const [origPos, origTarget] = [pos, target]
-    const segments = lineSegments(state.level.border)
-
-    // Collide and reflect off walls
-    var collision = false
-    var ignoreSegment = null
-    var numCollisions = 0
-    do {
-        // Check for collision with any wall
-        collision = false
-        for (var segment of segments) {
-            if (segment == ignoreSegment) continue
-            if (intersect([pos, target], segment)) {
-                collision = true
-                ignoreSegment = segment
-                console.log("Before collision: ", pos, target);
-                [pos, target] = doCollision([pos, target], segment)
-                console.log("After collision: ", pos, target)
-                numCollisions += 1
-                break
-            }
+        // Stationary balls
+        if (mag(move) == 0) {
+            updateMouseMode()
+            continue
         }
-    } while (collision)
 
-    assert(insidePoly(state.ball.pt, state.level.border), "Ball should be inside polygon")
-    if (!insidePoly(target, state.level.border)) {
-        console.log("Oops. The ball clipped out somehow.")
-        console.log(origPos, origTarget, target, numCollisions)
-        //debugger
-        throw Error("The ball clipped out.")
-        state.mode = "error"
-    }
-    state.ball.pt = target
-    // Change velocity direction too.
-    const finalDir = unitVector(sub(target, pos))
-    var speed = mag(state.ball.vel)
+        // Update the ball
+        var pos = ball.pt
+        var target = add(ball.pt, move)
+        const [origPos, origTarget] = [pos, target]
+        const segments = lineSegments(state.level.border)
 
-    // Apply friction slowdown
-    if (FRICTION_ON) {
+
+        // Collide and reflect off walls
+        var collision = false
+        var ignoreSegment = null
+        var numCollisions = 0
+        do {
+            // Check for collision with any wall
+            collision = false
+            for (var segment of segments) {
+                if (segment == ignoreSegment) continue
+                if (intersect([pos, target], segment)) {
+                    collision = true
+                    ignoreSegment = segment;
+                    [pos, target] = doCollision([pos, target], segment)
+                    numCollisions += 1
+                    break
+                }
+            }
+        } while (collision)
+
+        assert(!Number.isNaN(ball.pt.x))
+        assert(!Number.isNaN(ball.vel.x))
+        ball.pt = target
+
+        // Change velocity direction too.
+        const finalDir = unitVector(sub(target, pos))
+        var speed = mag(ball.vel)
+
+        // Apply friction slowdown
         speed = Math.max(0, speed + FRICTION_SLOWDOWN * elapsed)
-    }
-    state.ball.vel = scale(speed, finalDir)
+        ball.vel = scale(speed, finalDir)
 
-    // Land a ball in the hole
-    if (!screensaverMode && dist(state.ball.pt, state.level.hole) < 0.10) {
-        state.mode = "won"
-    }
-
-    // When the ball has stopped, transition simulate->plan mode
-    if (speed == 0) {
-        state.mode = "plan"
+        // Land a ball in the hole
+        if (dist(ball.pt, state.level.hole) < 0.10) {
+            ball.pt = {...state.level.start}
+            ball.vel = {x:0, y:0}
+            // TODO: Score stuff
+            updateMouseMode()
+        }
     }
 }
 
@@ -356,18 +377,13 @@ function redraw() {
         for (const pt of poly.slice(1)) {
             ctx.lineTo(...toPx(pt))
         }
+        ctx.lineTo(...toPx(poly[1])) // Round that last corner
     }
     function drawCircle(center, rad, color) {
         ctx.beginPath()
         ctx.fillStyle = color
         ctx.arc(...toPx(center), rad, 0, 2*Math.PI)
         ctx.fill()
-    }
-    
-    if (screensaverMode && state.mode == "simulate") {
-        // Draw the ball
-        drawCircle(state.ball.pt, 0.1*units, "white")
-        return
     }
 
     // Draw brown background
@@ -387,25 +403,26 @@ function redraw() {
     ctx.fill()
 
     // Draw the mouse preview
-    if (state.mouse.held && state.mode == "plan") {
+    if (state.mouse.held && state.mouse.mode == "plan") {
+        const ball = state.manualBall
+
         ctx.save()
         ctx.strokeStyle = "rgba(0, 0, 0, 0.6)"
         ctx.setLineDash([10, 20])
         ctx.lineWidth = 5
         const elapsed = (new Date() - state.mouse.holdStartTs)/1000
         ctx.lineDashOffset = (-elapsed * 100) % 30
-        // TODO: Preview should maybe show the first bounce
 
         ctx.beginPath()
-        ctx.moveTo(...toPx(state.ball.pt))
+        ctx.moveTo(...toPx(ball.pt))
         // Find the mirror fo the mouse
-        const target = mirror(state.mouse.pt, state.ball.pt)
+        const target = mirror(state.mouse.pt, ball.pt)
         ctx.lineTo(...toPx(target))
         ctx.stroke()
         ctx.restore()
 
         drawCircle(state.mouse.pt, 0.2*units, "red")
-    } else if (state.mode == "plan") {
+    } else if (state.mouse.mode == "plan") {
         // Visual cue that you're in putt mode
         drawCircle(state.mouse.pt, 0.2*units, "rgba(255, 0, 0, 0.5)")
     }
@@ -413,17 +430,19 @@ function redraw() {
     // Draw the hole
     drawCircle(state.level.hole, 0.2*units, "black")
 
-    // Draw the ball
-    drawCircle(state.ball.pt, 0.1*units, "white")
+    // Draw the balls
+    for (const ball of state.balls) {
+        // TODO: Draw the manually active one in another color
+        drawCircle(ball.pt, 0.1*units, "white")
+    }
 
-    if (state.mode == "won") {
-        text = `You win!    ${state.numPutts} strokes`
+    if (state.won) {
+        text = `You win!   $${state.numbers.money}/$1,000,000`
         ctx.font = "50px Arial";
         const size = ctx.measureText(text)
         size.height = 50
 
         ctx.fillStyle="#9daeb2"
-        console.log(size)
         const x1 = canvas.width/2-size.width/2
         const y1 = canvas.height/2-size.height/2
         ctx.fillRect(x1-20, y1-20, size.width+40, size.height+40)
@@ -433,9 +452,15 @@ function redraw() {
         //ctx.fillText(text, canvas.width/2-size.width/2, canvas.height/2-size.width/2)
         ctx.fillText(text, x1, y1+3)
     }
+
+    // Draw the stats
+    for (const number in state.numbers) {
+        $(`.${number}`).text(state.numbers[number])
+    }
+    $(`.autoPutt`).text(state.numbers.autoPutt ? "yes" : "no")
 }
 
-state.ball.pt = {...state.level.start}
+updateMouseMode()
 $(window).on("resize", resizeCanvas); resizeCanvas()
 $(canvas).on("mousedown mouseup mousemove touchstart touchmove touchend touchcancel", mouse)
 const tickInterval = setInterval(tick, 10)

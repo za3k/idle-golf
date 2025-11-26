@@ -16,10 +16,30 @@ body {
     padding: 0;
 }
 
-canvas {
+body > div {
     width: 100%;
     flex: 1 1;
     min-height: 0;
+    display: flex;
+    flex-direction: row
+}
+
+#playarea {
+    flex: 1 1;
+    min-width: 0;
+}
+
+#idle {
+    min-width: 20vw;
+    background-color: #5500b7;
+    border-left: 10px solid black;
+    padding: 20px;
+    flex: 0 1;
+}
+
+
+.info {
+    font-size: 16pt;
 }
 
 footer {
@@ -29,4 +49,17 @@ footer {
     padding: 1rem;
     background-color: white;
     border-top: 1px lightgrey solid;
+}
+
+label::after {
+    content: ":";
+}
+
+label {
+    width: 12em;
+    display: inline-block;
+}
+
+button {
+    display: block;
 }
