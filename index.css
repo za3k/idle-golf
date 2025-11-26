@@ -107,3 +107,7 @@ label {
 button {
     display: block;
 }
+
+button:not(.disabled) {
+    color: green;
+}

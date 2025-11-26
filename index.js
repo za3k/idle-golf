@@ -1,6 +1,8 @@
 const IMPULSE = 2
 const FRICTION_SLOWDOWN = -2 // Scale this with impulse.
 
+// Equal-size ball combo merging -- would require collision, probably won't do
+
 function scale(k, v1) {
     return { x: k*v1.x, y: k*v1.y }
 }
@@ -59,7 +61,8 @@ const state = {
     },
     numbers: {
         money: 0,
-            // TODO: Buy upgrades
+            // DONE: Buy upgrades
+            // TODO: Grey out unbuyable things
         jackpot: 0,
             // TODO: Increase on every putt
             // TODO: Win on hole-in-one
@@ -93,7 +96,8 @@ const state = {
             // TODO: Reduce combo on putt (minimum x1)
         comboIncreasePerSink: 1,
             // TODO: Increase combo on hole-in-one (per ball)
-        winGameEnabled: false,
+        winEnabled: false,
+            // DONE
     },
     upgrades: {
         numBallsMax: [ 
@@ -124,7 +128,7 @@ const state = {
             [100, true],
         ], comboReductionPerPutt: [
         ], comboIncreasePerSink: [
-        ], winGameEnabled: [
+        ], winEnabled: [
             [1000000, true],
         ],
 
@@ -458,6 +462,38 @@ function ballStopped(ball) {
     }
 }
 
+function updatePurchaseable() {
+    for (const [k, v] of Object.entries(state.upgrades)) {
+        var details = ""
+        var avail = false
+        const button = $(`button[for=${k}]`)
+        
+        if (v.length == 0) { // Sold out
+            details = `(MAX)`
+            button.attr("disabled", '')
+        } else {
+            const [cost, next] = v[0]
+            const curr = state.numbers[k]
+            details = `($${cost}, ${curr} -> ${next})`
+
+            if (next == true) details = `($${cost})` // Enable flag
+
+            avail = state.numbers.money >= cost
+        }
+
+        button.toggleClass("disabled", !avail)
+        button.find(".details").text(details)
+    }
+}
+
+function updateRequired() {
+    for (const [k, v] of Object.entries(state.numbers)) {
+        if (v == false || v == true) {
+            $(`[requires=${k}]`).toggle(v)
+        }
+    }
+}
+
 function redraw() {
     const ctx = canvas.getContext("2d")
 
@@ -530,7 +566,7 @@ function redraw() {
     }
 
     if (state.won) {
-        text = `You win!   $${state.numbers.money}/$1,000,000`
+        text = `You win!`
         ctx.font = "50px Arial";
         const size = ctx.measureText(text)
         size.height = 50
@@ -550,12 +586,15 @@ function redraw() {
     for (const number in state.numbers) {
         $(`.${number}`).text(state.numbers[number])
     }
+
+    updatePurchaseable()
 }
 
 respawnBall(null)
 $(window).on("resize", resizeCanvas); resizeCanvas()
 $(canvas).on("mousedown mouseup mousemove touchstart touchmove touchend touchcancel", mouse)
 const tickInterval = setInterval(tick, 10)
+updateRequired()
 
 $("button").on("click", (e) => {
     const for_ = $(e.currentTarget).attr("for")
@@ -581,4 +620,9 @@ $("button").on("click", (e) => {
     state.numbers[for_] = upgrades[0][1]
     upgrades.splice(0, 1)
 
+    updateRequired()
+})
+$(".win").on("click", () => {
+    state.won = true 
+    $(".win").remove()
 })
