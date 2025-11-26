@@ -1,0 +1,441 @@
+const screensaverMode = new URLSearchParams(window.location.search).has("screensaver")
+
+const FRICTION_ON = !screensaverMode
+const IMPULSE = 2
+const FRICTION_SLOWDOWN = -2 // Scale this with impulse.
+
+function scale(k, v1) {
+    return { x: k*v1.x, y: k*v1.y }
+}
+function add(v1, v2) {
+    return { x: v1.x + v2.x, y: v1.y + v2.y, }
+}
+function sub(v1, v2) { return add(v1, scale(-1, v2)) }
+function mag(v1) { return Math.sqrt(v1.x*v1.x + v1.y*v1.y) }
+function dist(v1, v2) { return mag(sub(v1, v2)) }
+function unitVector(v1) { return scale(1/mag(v1), v1) }
+function vec2angle(vec) { return Math.atan2(vec.y, vec.x) }
+function unitAngle(rads) { return { x: Math.cos(rads), y: Math.sin(rads) } }
+function rotate(vec, rads) {
+    return scale(mag(vec), unitAngle(vec2angle(vec) + rads))
+}
+
+function assert(cond, error) {
+    if (!cond) {
+        throw new Error(`AssertionError: ${error}`)
+    }
+}
+
+const canvas = $("canvas")[0]
+var now = new Date()
+const state = {
+    mode: "plan",
+    ball: {
+        pt: {x: 0, y: 0},
+        vel: {x: 0, y: 0}
+    },
+    mouse: {
+        pt: { x: 0, y: 0 },
+        holdStartTs: null,
+        isHeld: 0,
+    },
+    numPutts: 0,
+    level: {
+        // The level is a polygon
+        border: [
+            // Clockwise order
+            { x: 10, y: 0 },
+            { x: 10, y: 10 },
+            { x: 2, y: 10 },
+            { x: 1, y: 11 },
+            { x: 1, y: 12 },
+            { x: 2, y: 13 },
+            { x: 12, y: 13 },
+            { x: 14, y: 11 },
+            { x: 14, y: 0 },
+            { x: 10, y: 0 },
+        ],
+        start: {
+            x: 13,
+            y: 1,
+        },
+        hole: {
+            x: 3,
+            y: 11,
+        },
+    },
+}
+
+var offsetUnits = { x:0, y: 0 }
+var units = 0
+var level2units = 1
+function resizeCanvas() {
+    canvas.width = canvas.offsetWidth
+    canvas.height = canvas.offsetHeight
+
+    const xs = state.level.border.map(pt => pt.x)
+    const ys = state.level.border.map(pt => pt.y)
+    units = Math.min(canvas.height, canvas.width) / 30
+    const minX = Math.min(...xs)
+    const maxX = Math.max(...xs)
+    const minY = Math.min(...ys)
+    const maxY = Math.max(...ys)
+    var levelWidth  = maxX-minX
+    var levelHeight = maxY-minY
+    const levelSize = Math.max(levelWidth, levelHeight)
+    level2units = 20 / levelSize // Level should be 20 units tall/long
+    levelWidth = levelWidth * level2units
+    levelHeight = levelHeight * level2units
+
+    const canvasWidth = canvas.width / units
+    const canvasHeight = canvas.height / units
+    offsetUnits = {
+        x: (canvasWidth  / 2) - (levelWidth /2),
+        y: (canvasHeight / 2) - (levelHeight/2),
+    }
+}
+function toPx(pt) {
+    return [
+        (pt.x*level2units+offsetUnits.x)*units,
+        (pt.y*level2units+offsetUnits.y)*units,
+    ]
+}
+function toLevel(pt) {
+    return {
+        x: ((pt[0]/units) - offsetUnits.x) / level2units,
+        y: ((pt[1]/units) - offsetUnits.y) / level2units,
+    }
+}
+
+
+function mirror(thing, mirror) {
+    return add(mirror, sub(mirror, thing))
+}
+
+function mouse(e) {
+    e = e.originalEvent
+    var pt
+    if (e.offsetX) {
+        pt = toLevel([e.offsetX, e.offsetY])
+    } else if (e.touches && e.touches[0]) {
+        pt = toLevel([
+            e.touches[0].clientX - canvas.clientLeft,
+            e.touches[0].clientY - canvas.clientTop,
+        ])
+    }
+
+    if (e.type == "mousemove") {
+        state.mouse.pt = pt   
+    } else if (e.type == "mousedown") {
+        state.mouse.pt = pt
+        state.mouse.holdStartTs = new Date()
+        state.mouse.held = true
+    } else if (e.type == "mouseup") {
+        state.mouse.holdStartTs = null
+        state.mouse.held = false
+        putt()
+    } else if (e.type == "touchstart") {
+        state.mouse.pt = pt
+        state.mouse.held = true
+        state.mouse.holdStartTs = new Date()
+        e.preventDefault()
+    } else if (e.type == "touchmove") {
+        state.mouse.pt = pt
+    } else if ((e.type == "touchend" || e.type == "touchcancel") && e.touches.length == 0) {
+        state.mouse.holdStartTs = null
+        state.mouse.held = false
+        putt()
+    } else {
+        debugger;
+    }
+}
+
+function tick() {
+    const now2 = new Date()
+    const elapsed = Math.min(now2 - now, 100) // Never simulate more than 0.1s. No particular reason, just things kept whizzing off screen while testing otherwise.
+    now = now2
+
+    physicsTick(elapsed/1000)
+    redraw()
+    if (state.mode == "won") clearInterval(tickInterval)
+}
+
+function putt() {
+    if (state.mode != "plan") return
+    if (screensaverMode) redraw() // Clear the mouse real quick.
+    state.mode = "simulate"
+    state.numPutts++
+
+    // Instantaneously impart velocity
+    const impulse = sub(state.mouse.pt, state.ball.pt)
+    state.ball.vel = scale(-IMPULSE, impulse)
+}
+
+function lineSegments(poly) {
+    var res = []
+    for (var i=0; i<poly.length-1; i++) {
+        res.push([poly[i], poly[i+1]])
+    }
+    return res
+}
+
+function slope(seg) {
+    const [{x: x1, y: y1}, {x: x2, y: y2}] = seg
+    if (x1 > x2 || x1 == x2 && y1 > y2) return slope([seg[1], seg[0]])
+    const [dx, dy] = [x2-x1, y2-y1]
+    const m = dy/dx
+    const b = y1 - m*x1
+    return [m, b]
+}
+
+function insidePoly(pt, poly) {
+    var numIntersections = 0
+    for (const seg of lineSegments(poly)) {
+        // Does a ray going due +X from the point intersect the segment?
+        const [m, b] = slope(seg)
+        const y = pt.y
+        var intercepts = false
+
+        if (seg[0].y > y && seg[1].y > y) intercepts = false
+        else if (seg[0].y < y && seg[1].y < y) intercepts = false
+        else if (Number.isFinite(m)) {
+            if (m == 0) intercepts = false // Ignore horizontal case
+            else {
+                const x = (y - b)/m
+                intercepts = x > pt.x
+            }
+        } else if (Number.isNaN(m)) 
+            intercepts = false // This is a dumb case, ignore it
+        // seg goes up and down
+        else 
+            intercepts = seg[0].x > pt.x
+
+        console.log(pt, seg, intercepts)
+        if (intercepts) numIntersections++
+    }
+
+    return numIntersections % 2 == 1
+}
+
+function intersect(seg1, seg2) {
+    // Return the intersection if it exists, or null if not
+
+    // Find the (infinite) lines the segments are part of
+    const [mx1, b1] = slope(seg1)
+    const [mx2, b2] = slope(seg2)
+
+    // Find the intersection of the lines
+    var point = null
+    if (mx1 == mx2 || Number.isNaN(mx1) && Number.isNaN(mx2) || !Number.isFinite(mx1) && !Number.isFinite(mx2)) {
+        return null // Same slope. Unlikely enough we'll just ignore it.
+    } else if (Number.isNaN(mx1) || Number.isNaN(mx2)) {
+        return null // Only happens if the two endpoints are the same -- should be an error
+    // Special cases of one vertical line (dx=0, x constant)
+    } else if (!Number.isFinite(mx1)) { 
+        const x = seg1[0].x
+        point = { x, y: mx2*x + b2 }
+    } else if (!Number.isFinite(mx2)) { 
+        const x = seg2[0].x
+        point = { x, y: mx1*x + b1 }
+    } else {
+        // The normal case -- two intersecting lines
+        const x = (b2-b1) / (mx1-mx2)
+        const y = mx1*x + b1
+        point = { x, y }
+    }
+
+    // Check whether the given point is on the segments
+    // We already know it's on the line, so just make sure it's within the X bounds and Y bounds for each.
+    const eps = 0.0001
+    if (point.y-eps > Math.max(seg1[0].y, seg1[1].y)) return false
+    if (point.y+eps < Math.min(seg1[0].y, seg1[1].y)) return false
+    if (point.y-eps > Math.max(seg2[0].y, seg2[1].y)) return false
+    if (point.y+eps < Math.min(seg2[0].y, seg2[1].y)) return false
+    if (point.x-eps > Math.max(seg1[0].x, seg1[1].x)) return false
+    if (point.x+eps < Math.min(seg1[0].x, seg1[1].x)) return false
+    if (point.x-eps > Math.max(seg2[0].x, seg2[1].x)) return false
+    if (point.x+eps < Math.min(seg2[0].x, seg2[1].x)) return false
+    return point
+}
+assert(!!intersect([{x: 9.75, y: 12.97}, {x: 9.74, y: 13.01}], [{x: 2, y:13}, {x:12, y:13}]), "Intersection failed")
+assert(!!intersect(
+    [{x: 8.24878, y: 10.00511}, {x: 8.226582, y: 9.964496}],
+    [{ x: 10, y: 10 },{ x: 2, y: 10 }]),
+    "Intersection failed")
+
+
+
+function doCollision(moveVector, wall) {
+    // The move intersects the given wall. Elastically collide off it, and return the post-collision moveVector, assuming no other collisions.
+    const [start, end1] = moveVector
+    const mid = intersect(moveVector, wall)
+    console.log(moveVector, wall, mid)
+
+    const remainingDist = dist(start, end1) - dist(start, mid)
+
+    const wallAngle = vec2angle(sub(wall[1], wall[0]))
+    const moveUnitVec = unitVector(sub(moveVector[1], moveVector[0]))
+    
+    const v1 = rotate(moveUnitVec, -wallAngle)
+    const v2 = { x: v1.x, y: -v1.y }
+    const v3 = rotate(v2, +wallAngle)
+    const postReflectMove = scale(remainingDist, v3)
+
+    return [
+        mid,
+        add(mid, postReflectMove)
+    ]
+}
+
+function physicsTick(elapsed) {
+    if (state.mode != "simulate") return
+
+    // Update the ball
+    const move = scale(elapsed, state.ball.vel)
+    var pos = state.ball.pt
+    var target = add(state.ball.pt, move)
+    const [origPos, origTarget] = [pos, target]
+    const segments = lineSegments(state.level.border)
+
+    // Collide and reflect off walls
+    var collision = false
+    var ignoreSegment = null
+    var numCollisions = 0
+    do {
+        // Check for collision with any wall
+        collision = false
+        for (var segment of segments) {
+            if (segment == ignoreSegment) continue
+            if (intersect([pos, target], segment)) {
+                collision = true
+                ignoreSegment = segment
+                console.log("Before collision: ", pos, target);
+                [pos, target] = doCollision([pos, target], segment)
+                console.log("After collision: ", pos, target)
+                numCollisions += 1
+                break
+            }
+        }
+    } while (collision)
+
+    assert(insidePoly(state.ball.pt, state.level.border), "Ball should be inside polygon")
+    if (!insidePoly(target, state.level.border)) {
+        console.log("Oops. The ball clipped out somehow.")
+        console.log(origPos, origTarget, target, numCollisions)
+        //debugger
+        throw Error("The ball clipped out.")
+        state.mode = "error"
+    }
+    state.ball.pt = target
+    // Change velocity direction too.
+    const finalDir = unitVector(sub(target, pos))
+    var speed = mag(state.ball.vel)
+
+    // Apply friction slowdown
+    if (FRICTION_ON) {
+        speed = Math.max(0, speed + FRICTION_SLOWDOWN * elapsed)
+    }
+    state.ball.vel = scale(speed, finalDir)
+
+    // Land a ball in the hole
+    if (!screensaverMode && dist(state.ball.pt, state.level.hole) < 0.10) {
+        state.mode = "won"
+    }
+
+    // When the ball has stopped, transition simulate->plan mode
+    if (speed == 0) {
+        state.mode = "plan"
+    }
+}
+
+function redraw() {
+    const ctx = canvas.getContext("2d")
+
+    function drawPoly(poly) {
+        ctx.moveTo(...toPx(poly[0]))
+        for (const pt of poly.slice(1)) {
+            ctx.lineTo(...toPx(pt))
+        }
+    }
+    function drawCircle(center, rad, color) {
+        ctx.beginPath()
+        ctx.fillStyle = color
+        ctx.arc(...toPx(center), rad, 0, 2*Math.PI)
+        ctx.fill()
+    }
+    
+    if (screensaverMode && state.mode == "simulate") {
+        // Draw the ball
+        drawCircle(state.ball.pt, 0.1*units, "white")
+        return
+    }
+
+    // Draw brown background
+    ctx.fillStyle = "#b5815a"
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    // Draw green
+    ctx.beginPath()
+    ctx.strokeStyle = "#5e2c06"
+    ctx.lineWidth = 10
+    drawPoly(state.level.border)
+    ctx.stroke()
+
+    ctx.beginPath()
+    ctx.fillStyle = "#117c13"
+    drawPoly(state.level.border)
+    ctx.fill()
+
+    // Draw the mouse preview
+    if (state.mouse.held && state.mode == "plan") {
+        ctx.save()
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.6)"
+        ctx.setLineDash([10, 20])
+        ctx.lineWidth = 5
+        const elapsed = (new Date() - state.mouse.holdStartTs)/1000
+        ctx.lineDashOffset = (-elapsed * 100) % 30
+        // TODO: Preview should maybe show the first bounce
+
+        ctx.beginPath()
+        ctx.moveTo(...toPx(state.ball.pt))
+        // Find the mirror fo the mouse
+        const target = mirror(state.mouse.pt, state.ball.pt)
+        ctx.lineTo(...toPx(target))
+        ctx.stroke()
+        ctx.restore()
+
+        drawCircle(state.mouse.pt, 0.2*units, "red")
+    } else if (state.mode == "plan") {
+        // Visual cue that you're in putt mode
+        drawCircle(state.mouse.pt, 0.2*units, "rgba(255, 0, 0, 0.5)")
+    }
+
+    // Draw the hole
+    drawCircle(state.level.hole, 0.2*units, "black")
+
+    // Draw the ball
+    drawCircle(state.ball.pt, 0.1*units, "white")
+
+    if (state.mode == "won") {
+        text = `You win!    ${state.numPutts} strokes`
+        ctx.font = "50px Arial";
+        const size = ctx.measureText(text)
+        size.height = 50
+
+        ctx.fillStyle="#9daeb2"
+        console.log(size)
+        const x1 = canvas.width/2-size.width/2
+        const y1 = canvas.height/2-size.height/2
+        ctx.fillRect(x1-20, y1-20, size.width+40, size.height+40)
+
+        ctx.fillStyle="black"
+        ctx.textBaseline = "top"
+        //ctx.fillText(text, canvas.width/2-size.width/2, canvas.height/2-size.width/2)
+        ctx.fillText(text, x1, y1+3)
+    }
+}
+
+state.ball.pt = {...state.level.start}
+$(window).on("resize", resizeCanvas); resizeCanvas()
+$(canvas).on("mousedown mouseup mousemove touchstart touchmove touchend touchcancel", mouse)
+const tickInterval = setInterval(tick, 10)
