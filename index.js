@@ -51,8 +51,10 @@ const state = {
             { x: 10, y: 0 },
         ],
         start: {
-            x: 13,
-            y: 1,
+            //x: 13,
+            //y: 1,
+            x: 4,
+            y: 11.1,
         },
         hole: {
             x: 3,
@@ -62,22 +64,22 @@ const state = {
     numbers: {
         money: 0,
             // DONE: Buy upgrades
-            // TODO: Grey out unbuyable things
+            // DONE: Grey out unbuyable things
         jackpot: 0,
-            // TODO: Increase on every putt
-            // TODO: Win on hole-in-one
+            // DONE: Increase on every putt
+            // DONE: Win on hole-in-one
         numBallsCurrent: 1,
-            // TODO: Make balls respawn non-instantly, add numbers for that
         numBallsMax: 1,
             // TODO: When this increases, add a ball, actually test multiball
         friction: 1,
             // TODO: Make this higher to start
         jackpotEnabled: false,
-            // TODO: Hide display, buy options until enabled
+            // DONE: Hide display, buy options until enabled
         jackpotMinimum: 0,
-            // TODO: On winning the jackpot, reset to this value
+            // DONE: On winning the jackpot, reset to this value
+            // DONE: On upgrading the minimum, set it to this value
         jackpotRate: 1,
-            // TODO: This is how much the jackpot should increase by on a putt
+            // DONE: This is how much the jackpot should increase by on a putt
         holePayout: 1,
         manualPuttMaxPower: 1,
             // TODO: Actually restrict putt power
@@ -105,7 +107,7 @@ const state = {
         ], friction: [
             [1, 0],
         ], jackpotMinimum: [
-            [1, 1],
+            [1, 2],
         ], jackpotRate: [
             [10, 2],
         ], holePayout: [
@@ -257,6 +259,7 @@ function manualPutt() {
     const ball = state.manualBall
     const impulse = sub(state.mouse.pt, ball.pt)
     ball.vel = scale(-IMPULSE, impulse)
+    ball.numPutts++
 
     updateMouseMode()
 }
@@ -394,12 +397,17 @@ function physicsTick(elapsed) {
         var speed = mag(ball.vel)
 
         // Apply friction slowdown
-        speed = Math.max(0, speed + FRICTION_SLOWDOWN * elapsed)
+        speed = Math.max(0, speed + FRICTION_SLOWDOWN * elapsed * state.numbers.friction)
         ball.vel = scale(speed, finalDir)
 
         // Land a ball in the hole
         if (dist(ball.pt, state.level.hole) < 0.10) {
             ballSunk(ball)
+        }
+
+        if (!insidePoly(ball.pt, state.level.border)) {
+            displayTop("Whoops! Ball flew out of bounds", "red")
+            respawnBall(ball)
         }
 
         if (speed == 0) {
@@ -408,7 +416,53 @@ function physicsTick(elapsed) {
     }
 }
 
-function displayTop(msg, color) {
+function insidePoly(pt, poly) {
+    var numIntersections = 0
+    for (const seg of lineSegments(poly)) {
+        // Does a ray going due +X from the point intersect the segment?
+        const [m, b] = slope(seg)
+        const y = pt.y
+        var intercepts = false
+
+        if (seg[0].y > y && seg[1].y > y) intercepts = false
+        else if (seg[0].y < y && seg[1].y < y) intercepts = false
+        else if (Number.isFinite(m)) {
+            if (m == 0) intercepts = false // Ignore horizontal case
+            else {
+                const x = (y - b)/m
+                intercepts = x > pt.x
+            }
+        } else if (Number.isNaN(m)) 
+            intercepts = false // This is a dumb case, ignore it
+        // seg goes up and down
+        else 
+            intercepts = seg[0].x > pt.x
+
+        if (intercepts) numIntersections++
+    }
+
+    const ret = numIntersections % 2 == 1
+    if (!ret) {
+        console.log("Out of bounds", pt, poly)
+        debugger;
+    }
+    return ret
+}
+
+const topQueue = []
+function displayTop() {
+    if (topQueue.length > 5) return
+    else if (topQueue.length == 0) {
+        topQueue.push(null)
+        _displayTop.apply(null, arguments)
+    } else topQueue.push(arguments)
+}
+setInterval(() => {
+    if (topQueue.length == 0) return
+    const next = topQueue.shift()
+    if (next) _displayTop.apply(null, next)
+}, 1000)
+function _displayTop(msg, color) {
     // Display a message at the top of the screen, which automatically fades and deletes itself later, while drifting up
     const e = $(`<div class="topMessage">${msg}</div>`)
     if (color) e.css({"color": color})
@@ -440,26 +494,43 @@ function respawnBall(ball) {
     ball.vel = {x:0, y:0}
     ball.numPutts = 0
 }
+function bumpJackpot(ball) {
+    if (state.numbers.jackpotEnabled) {
+        const bump = state.numbers.jackpotRate * state.numbers.globalMult
+        state.numbers.jackpot += bump
+        displayBall(ball, `+$${bump} jackpot`, "gold")
+    }
+}
 function ballSunk(ball) {
-    const gain = state.numbers.holePayout
-    state.numbers.money += gain
-
-    if (ball.numPutts == 1 && state.numbers.jackpot) { // Hole-in-one
+    var gain = state.numbers.holePayout * state.numbers.globalMult
+    if (ball.numPutts == 1) { // Hole-in-one
         gain *= 2
-        displayTop(`Hole-in-one! +$${gain}`, "gold")
-        displayTop(`Jackpot! +$${state.numbers.jackpot}`, "gold")
+        if (ball.numPutts == 1 && state.numbers.jackpot) { // Hole-in-one
+            gain += state.numbers.jackpot
+            state.numbers.jackpot = state.numbers.jackpotMinimum
+            displayTop(`Jackpot! +$${gain}`, "gold")
+        } else {
+            displayTop(`Hole-in-one! +$${gain}`, "green")
+        }
     } else {
         displayTop(`Hole Complete +$${gain}`, "green")
     }
+    state.numbers.money += gain
 
-    respawnBall(ball) // TODO: Make it not instant later
+    bumpJackpot(ball)
+
+    if (ball.numPutts == 1 && state.numbers.jackpot) { // Hole-in-one
+        const payout = state.numbers.jackpot
+        displayTop(`Jackpot! +$${payout}`, "gold")
+        state.numbers.money += payout
+    }
+
+    // idea: Make respawning take a while
+    respawnBall(ball) 
     updateMouseMode()
 }
 function ballStopped(ball) {
-    if (state.numbers.jackpotEnabled) {
-        state.numbers.jackpot += state.numbers.jackpotRate
-        displayBall(`+$${state.numbers.jackpotRate} jackpot`, "gold")
-    }
+    bumpJackpot(ball)
 }
 
 function updatePurchaseable() {
@@ -618,6 +689,8 @@ $("button").on("click", (e) => {
     displayTop(`Purchased for $${price}: ${desc}`, "green")
 
     state.numbers[for_] = upgrades[0][1]
+    state.numbers.jackpot = Math.max(state.numbers.jackpot, state.numbers.jackpotMinimum)
+
     upgrades.splice(0, 1)
 
     updateRequired()

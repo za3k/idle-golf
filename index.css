@@ -111,3 +111,7 @@ button {
 button:not(.disabled) {
     color: green;
 }
+
+.debug {
+    display: none;
+}

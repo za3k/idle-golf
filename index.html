@@ -17,7 +17,7 @@
                 <br>
                 <div class="info debug"><label>Jackpot</label>$<span class="jackpot">-</span></div>
                 <div class="info debug"><label>Friction</label><span class="friction">-</span></div>
-                <div class="info debug"><label>Jackpot Minimum</label><span class="jackpotEnabled">-</span></div>
+                <div class="info debug"><label>Jackpot Enabled</label><span class="jackpotEnabled">-</span></div>
                 <div class="info debug"><label>Jackpot Minimum</label><span class="jackpotMinimum">-</span></div>
                 <div class="info debug"><label>Jackpot Rate</label><span class="jackpotRate">-</span></div>
                 <div class="info debug"><label>Hole Payout</label><span class="holePayout">-</span></div>
@@ -31,28 +31,28 @@
                 <div class="info debug"><label>Combo Loss Per Putt</label><span class="comboReductionPerPutt">-</span></div>
                 <div class="info debug"><label>Combo Gain Per Hole-in-1</label><span class="comboIncreasePerSink">-</span></div>
                 <h2>Upgrades</h2>
-                <button for="manualPuttMaxPower"><span class="desc">Increase Manual Putt Max Power</span><span class="details"></span></button>
+                <button for="manualPuttMaxPower"><span class="desc">Putt Power</span> <span class="details"></span></button>
                 <br>
-                <button for="holePayout"><span class="desc">Increase Hole Payout</span> <span class="details"></span></button>
+                <button for="numBallsMax"><span class="desc">Multi-Balls</span> <span class="details"></span></button>
+                <button for="friction"><span class="desc">Friction</span> <span class="details"></span></button>
+                <br>
+                <button for="holePayout"><span class="desc">Hole Payout</span> <span class="details"></span></button>
                 <button for="globalMult"><span class="desc">Global Money Multiplier</span> <span class="details"></span></button>
-                <button for="jackpotEnabled"><span class="desc">Activate Jackpot</span> <span class="details"></span></button>
-                <button for="jackpotMinimum" requires="jackpotEnabled"><span class="desc">Increase Jackpot Minimum</span> <span class="details"></span></button>
-                <button for="jackpotRate" requires="jackpotEnabled"><span class="desc">Increase Jackpot Rate</span> <span class="details"></span></button>
-                <br><span class="desc">
-                <button for="comboEnabled"><span class="desc">Combos</span> <span class="details"></span></button>
-                <button for="comboReductionPerPutt" requires="comboEnabled"><span class="desc">Reduce Combo Loss</span> <span class="details"></span></button>
-                <button for="comboIncreasePerSink" requires="comboEnabled"><span class="desc">Increase Combo Gain</span> <span class="details"></span></button>
-                <br><span class="desc">
-                <br><span class="desc">
-                <button for="numBallsMax"><span class="desc">+1 Simultaneous Ball</span> <span class="details"></span></button>
-                <button for="friction"><span class="desc">Decrease Friction</span> <span class="details"></span></button>
-                <br><span class="desc">
-                <button for="autoPuttEnabled"><span class="desc">Auto-Putt</span> <span class="details"></span></button>
+                <br>
+                <button for="jackpotEnabled"><span class="desc">Unlock Jackpot</span> <span class="details"></span></button>
+                <button for="jackpotMinimum" requires="jackpotEnabled"><span class="desc">Jackpot Minimum</span> <span class="details"></span></button>
+                <button for="jackpotRate" requires="jackpotEnabled"><span class="desc">Jackpot Rate</span> <span class="details"></span></button>
+                <br>
+                <button for="comboEnabled"><span class="desc">Unlock Combos</span> <span class="details"></span></button>
+                <button for="comboReductionPerPutt" requires="comboEnabled"><span class="desc">Combo Loss</span> <span class="details"></span></button>
+                <button for="comboIncreasePerSink" requires="comboEnabled"><span class="desc">Combo Gain</span> <span class="details"></span></button>
+                <br>
+                <button for="autoPuttEnabled"><span class="desc">Unlock Auto-Putt</span> <span class="details"></span></button>
                 <button for="autoPuttPower" requires="autoPuttEnabled"><span class="desc">Increase Auto-Putt Power</span> <span class="details"></span></button>
                 <button for="autoPuttCooldown" requires="autoPuttEnabled"><span class="desc">Decrease Auto-Putt Cooldown</span> <span class="details"></span></button>
                 <button for="autoPuttAim" requires="autoPuttEnabled"><span class="desc">Improve Auto-Putt Aim</span> <span class="details"></span></button>
-                <br><span class="desc">
-                <button for="winEnabled"><span class="desc">Buy a solid gold "#1 Golfer" Trophy</span> <span class="details"></span></button>
+                <br>
+                <button for="winEnabled"><span class="desc">Solid Gold "#1 Golfer" Trophy</span> <span class="details"></span></button>
                 <button class="win" requires="winEnabled"><span class="desc">Win the Game</span> <span class="details"></span></button>
             </div>
         </div>
