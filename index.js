@@ -556,3 +556,29 @@ respawnBall(null)
 $(window).on("resize", resizeCanvas); resizeCanvas()
 $(canvas).on("mousedown mouseup mousemove touchstart touchmove touchend touchcancel", mouse)
 const tickInterval = setInterval(tick, 10)
+
+$("button").on("click", (e) => {
+    const for_ = $(e.currentTarget).attr("for")
+    const desc = $(e.currentTarget).find(".desc").text()
+    const upgrades = state.upgrades[for_] || []
+
+    if (upgrades.length == 0) {
+        displayTop(`'${desc}' sold out`, "red")
+        return
+    }
+
+    // Check current purchase price of the button
+    const price = upgrades[0][0]
+    if (false && price > state.numbers.money) {
+        displayTop(`Not enough money`, "red")
+        return
+    }
+
+    // Do purchase
+    state.numbers.money -= price
+    displayTop(`Purchased for $${price}: ${desc}`, "green")
+
+    state.numbers[for_] = upgrades[0][1]
+    upgrades.splice(0, 1)
+
+})
