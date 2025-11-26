@@ -71,11 +71,11 @@ const state = {
         jackpot: 0,
             // DONE: Increase on every putt
             // DONE: Win on hole-in-one
-        numBallsCurrent: 1,
+        numBallsCurrent: 0,
         numBallsMax: 1,
             // TODO: When this increases, add a ball, actually test multiball
         friction: 1,
-            // TODO: Make this higher to start
+            // DONE: Make this higher to start
         jackpotEnabled: false,
             // DONE: Hide display, buy options until enabled
         manualPuttMax: 1,
@@ -86,7 +86,7 @@ const state = {
             // DONE: This is how much the jackpot should increase by on a putt
         holePayout: 1,
         manualPuttPower: 1,
-            // TODO: Actually restrict putt power
+            // DONE: Actually restrict putt power
         autoPuttEnabled: false,
             // TODO: Do auto-putts
         autoPuttCooldown: 10,
@@ -96,12 +96,12 @@ const state = {
         autoPuttAim: 1,
             // TODO: Use the direction of the hole, plus a random offset
         globalMult: 1,
-            // TODO: jackpot, hole sink
+            // DONE: jackpot, hole sink
         comboEnabled: false,
         comboReductionPerPutt: 1,
-            // TODO: Reduce combo on putt (minimum x1)
+            // DONE: Reduce combo on putt (minimum x1)
         comboIncreasePerSink: 1,
-            // TODO: Increase combo on hole-in-one (per ball)
+            // DONE: Increase combo on hole-in-one (per ball)
         won: false,
     },
     upgrades: {
@@ -535,10 +535,25 @@ function ballSunk(ball) {
 
     // idea: Make respawning take a while
     respawnBall(ball) 
+
+    if (state.numbers.comboEnabled) {
+        ball.combo = ball.combo + state.numbers.comboIncreasePerSink
+        displayBall(ball, `x${ball.combo} combo`, "blue")
+    }
+
     updateMouseMode()
 }
 function ballStopped(ball) {
     bumpJackpot(ball)
+
+    if (state.numbers.comboEnabled) {
+        const oldCombo = ball.combo
+        ball.combo = Math.max(1, ball.combo - state.numbers.comboReductionPerPutt)
+
+        if (ball.combo != oldCombo) {
+            displayBall(ball, `x${ball.combo} combo`, "blue")
+        }
+    }
 }
 
 function updatePurchaseable() {
@@ -700,6 +715,7 @@ $("button").on("click", (e) => {
 
     state.numbers[for_] = upgrades[0][1]
     state.numbers.jackpot = Math.max(state.numbers.jackpot, state.numbers.jackpotMinimum)
+    //while (state.numbers.numBallsMax > state.numbers.numBallsCurrent) respawnBall(null)
 
     upgrades.splice(0, 1)
 
