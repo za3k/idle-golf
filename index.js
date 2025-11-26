@@ -1,7 +1,3 @@
-// TODO: Ball changes color on hole-in-one, increased multiplier
-// TODO: Upgrade for more multiplier
-// TODO: Upgrade to slow down multiplier loss per putt
-
 const IMPULSE = 2
 const FRICTION_SLOWDOWN = -2 // Scale this with impulse.
 
@@ -30,13 +26,7 @@ function assert(cond, error) {
 const canvas = $("canvas")[0]
 var now = new Date()
 const state = {
-    balls: [
-        {
-            pt: {x: 13, y: 1},
-            vel: {x: 0, y: 0},
-            numPutts: 0,
-        },
-    ],
+    balls: [],
     mouse: {
         pt: { x: 0, y: 0 },
         holdStartTs: null,
@@ -87,14 +77,23 @@ const state = {
             // TODO: This is how much the jackpot should increase by on a putt
         holePayout: 1,
         manualPuttMaxPower: 1,
+            // TODO: Actually restrict putt power
         autoPuttEnabled: false,
+            // TODO: Do auto-putts
         autoPuttCooldown: 10,
+            // TODO: Have a cooldown
         autoPuttPower: 0.1,
+            /// TODO: Use this instead of a const
         autoPuttAim: 1,
+            // TODO: Use the direction of the hole, plus a random offset
         globalMult: 1,
+            // TODO: jackpot, hole sink
         comboEnabled: false,
         comboReductionPerPutt: 1,
+            // TODO: Reduce combo on putt (minimum x1)
         comboIncreasePerSink: 1,
+            // TODO: Increase combo on hole-in-one (per ball)
+        winGameEnabled: false,
     },
     upgrades: {
         numBallsMax: [ 
@@ -119,10 +118,14 @@ const state = {
         ], autoPuttPower: [
         ], autoPuttAim: [
         ], jackpotEnabled: [
+            [1000, true],
         ], globalMult: [
         ], comboEnabled: [
+            [100, true],
         ], comboReductionPerPutt: [
         ], comboIncreasePerSink: [
+        ], winGameEnabled: [
+            [1000000, true],
         ],
 
     },
@@ -423,9 +426,15 @@ function displayBall(ball, msg, color) {
 }
 
 function respawnBall(ball) {
+    if (!ball) {
+        ball = { combo: 1 }
+        state.balls.push(ball)
+    }
+
     // TODO: Randomize the starting position a bit
     ball.pt = {...state.level.start}
     ball.vel = {x:0, y:0}
+    ball.numPutts = 0
 }
 function ballSunk(ball) {
     const gain = state.numbers.holePayout
@@ -543,7 +552,7 @@ function redraw() {
     }
 }
 
-updateMouseMode()
+respawnBall(null)
 $(window).on("resize", resizeCanvas); resizeCanvas()
 $(canvas).on("mousedown mouseup mousemove touchstart touchmove touchend touchcancel", mouse)
 const tickInterval = setInterval(tick, 10)
