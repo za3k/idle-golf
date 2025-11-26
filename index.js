@@ -22,6 +22,13 @@ function limitMag(v1, maxMag) {
     return scale(Math.min(mag(v1), maxMag), unitVector(v1))
 }
 
+
+function randRange(min, max) { return min + Math.random() * (max-min) }
+function randChoice(arr) { return arr[randInt(0, arr.length)] }
+function randInt(minInc, maxExc) {
+    return Math.floor(randRange(minInc, maxExc-0.00001))
+}
+
 function assert(cond, error) {
     if (!cond) {
         throw new Error(`AssertionError: ${error}`)
@@ -54,10 +61,9 @@ const state = {
             { x: 10, y: 0 },
         ],
         start: {
-            //x: 13,
-            //y: 1,
-            x: 4,
-            y: 11.1,
+            x: 13,
+            y: 1,
+            //x: 4, y: 11.1,
         },
         hole: {
             x: 3,
@@ -73,7 +79,7 @@ const state = {
             // DONE: Win on hole-in-one
         numBallsCurrent: 0,
         numBallsMax: 1,
-            // TODO: When this increases, add a ball, actually test multiball
+            // DONE: When this increases, add a ball, actually test multiball
         friction: 1,
             // DONE: Make this higher to start
         jackpotEnabled: false,
@@ -88,13 +94,13 @@ const state = {
         manualPuttPower: 1,
             // DONE: Actually restrict putt power
         autoPuttEnabled: false,
-            // TODO: Do auto-putts
-        autoPuttCooldown: 10,
-            // TODO: Have a cooldown
+            // DONE: Do auto-putts
+        autoPuttCooldown: 8,
+            // DONE: Have a cooldown
         autoPuttPower: 0.1,
-            /// TODO: Use this instead of a const
-        autoPuttAim: 1,
-            // TODO: Use the direction of the hole, plus a random offset
+            // DONE: Use this instead of a const
+        autoPuttAim: 0.5,
+            // DONE: Use the direction of the hole, plus a random offset
         globalMult: 1,
             // DONE: jackpot, hole sink
         comboEnabled: false,
@@ -104,6 +110,7 @@ const state = {
             // DONE: Increase combo on hole-in-one (per ball)
         won: false,
     },
+    lastAutoPutt: new Date(),
     upgrades: {
         numBallsMax: [ 
             [2, 2],
@@ -129,8 +136,12 @@ const state = {
         ], autoPuttEnabled: [
             [3, true]
         ], autoPuttCooldown: [
+            [1, 4],
+            [1, 2],
+            [1, 1],
         ], autoPuttPower: [
         ], autoPuttAim: [
+            [1, 0.01],
         ], jackpotEnabled: [
             [1000, true],
         ], globalMult: [
@@ -260,7 +271,6 @@ function updateMouseMode() {
 
 function manualPutt() {
     if (state.mouse.mode != "plan") return
-    state.numPutts++
 
     // Instantaneously impart velocity
     const ball = state.manualBall
@@ -422,6 +432,38 @@ function physicsTick(elapsed) {
             ballStopped(ball)
         }
     }
+
+    if (state.numbers.autoPuttEnabled && state.balls.length > 1) {
+        const now = new Date()
+        const timeSinceAutoPutt = (now - state.lastAutoPutt) / 1000
+        if (timeSinceAutoPutt > state.numbers.autoPuttCooldown) {
+            autoPutt()
+            state.lastAutoPutt = now
+        }
+    }
+}
+
+function autoPutt() {
+    if (state.balls.length <= 1) return
+
+    var tries = 0
+    do {
+        ball = randChoice(state.balls)
+        tries++
+        if (tries > 10) return
+    } while (ball == state.manualBall || mag(ball.vel) > 0)
+
+    // Instantaneously impart velocity
+    const perfectDir = unitVector(sub(ball.pt, state.level.hole))
+    const randomOffset = randRange(-1, 1) * Math.PI * state.numbers.autoPuttAim
+    const actualDir = rotate(perfectDir, randomOffset)
+    const speed = state.numbers.autoPuttPower * randRange(0.5, 1)
+    const impulse = scale(IMPULSE * speed, actualDir)
+
+    ball.vel = scale(-IMPULSE * state.numbers.manualPuttPower, impulse)
+    ball.numPutts++
+
+    updateMouseMode()
 }
 
 function insidePoly(pt, poly) {
