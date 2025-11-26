@@ -1,6 +1,5 @@
-const IMPULSE = 1
-const FRICTION_SLOWDOWN = -4 // Scale this with impulse.
-const MAX_DRAW = 5
+const IMPULSE = 6
+const FRICTION_SLOWDOWN = 1 // Scale this with impulse.
 
 // Equal-size ball combo merging -- would require collision, probably won't do
 
@@ -79,6 +78,7 @@ const state = {
             // TODO: Make this higher to start
         jackpotEnabled: false,
             // DONE: Hide display, buy options until enabled
+        manualPuttMax: 1,
         jackpotMinimum: 0,
             // DONE: On winning the jackpot, reset to this value
             // DONE: On upgrading the minimum, set it to this value
@@ -121,6 +121,11 @@ const state = {
         ], manualPuttPower: [
             [40, 1.5],
             [80, 2],
+        ], manualPuttMax: [
+            [1, 2],
+            [2, 3],
+            [3, 4],
+            [4, 5],
         ], autoPuttEnabled: [
             [3, true]
         ], autoPuttCooldown: [
@@ -259,7 +264,7 @@ function manualPutt() {
 
     // Instantaneously impart velocity
     const ball = state.manualBall
-    const impulse = limitMag(sub(state.mouse.pt, ball.pt), MAX_DRAW)
+    const impulse = limitMag(sub(state.mouse.pt, ball.pt), state.numbers.manualPuttMax)
     ball.vel = scale(-IMPULSE * state.numbers.manualPuttPower, impulse)
     ball.numPutts++
 
@@ -399,7 +404,8 @@ function physicsTick(elapsed) {
         var speed = mag(ball.vel)
 
         // Apply friction slowdown
-        speed = Math.max(0, speed + FRICTION_SLOWDOWN * elapsed * state.numbers.friction)
+        slowdown = FRICTION_SLOWDOWN * state.numbers.friction * Math.max(speed, 2)
+        speed = Math.max(0, speed - slowdown * elapsed)
         ball.vel = scale(speed, finalDir)
 
         // Land a ball in the hole
@@ -616,7 +622,7 @@ function redraw() {
         // Find the mirror fo the mouse
         const target = mirror(state.mouse.pt, ball.pt)
         const move = sub(target, ball.pt)
-        const newTarget = add(ball.pt, limitMag(move, MAX_DRAW))
+        const newTarget = add(ball.pt, limitMag(move, state.numbers.manualPuttMax))
         ctx.lineTo(...toPx(newTarget))
         ctx.stroke()
         ctx.restore()
