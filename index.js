@@ -74,43 +74,22 @@ const state = {
         money: 0,
         jackpot: 0,
         numBallsCurrent: 0,
-
-        manualPuttPower: 1,
-        manualPuttMax: 5, // No upgrade
-        numBallsMax: 1,
-        friction: 1,
-        holeSize: 0.1,
-        holePayout: 10,
-        globalMult: 1,
-        jackpotEnabled: false,
-        jackpotMinimum: 20,
-        jackpotRate: 5,
-        comboEnabled: false,
-        comboIncreasePerSink: 1,
-        comboReductionPerPutt: 1,
-        autoPuttEnabled: false,
-        autoPuttCooldown: 4,
-        autoPuttPower: 1,
-        autoPuttAim: 0.5,
-        won: false,
     },
     lastAutoPutt: new Date(),
     upgrades: {
         // To make everything else look identical
         manualPuttPower: [
+            [0, 1],
             [1, 1.5],
             [20, 2],
             [50, 3],
             [100, 4],
             [200, 5],
-        /*
         ], manualPuttMax: [
-            [1, 2],
-            [2, 3],
-            [3, 4],
-            [4, 5],
-        */
+            // No upgrade
+            [0, 5],
         ], numBallsMax: [ 
+            [0, 1],
             [10, 2],
             [20, 3],
             [30, 4],
@@ -151,12 +130,14 @@ const state = {
             [380, 39],
             [390, 40],
         ], friction: [
+            [0, 1],
             [100, 0.8],
             [500, 0.7],
             [2500, 0.6],
             [7500, 0.5],
             [37500, 0.4],
         ], holeSize: [
+            [0, 0.1],
             [10, 0.15],
             [100, 0.2],
             [1000, 0.3],
@@ -169,35 +150,45 @@ const state = {
             [10000000000, 5],
             [100000000000, 10],
         ], holePayout: [
+            [0, 10],    
             [20, 20],
             [400, 50],
             [8000, 100],
             [16000, 200],
             [320000, 500],
         ], globalMult: [
+            [0, 1],
             [1000, 2],
             [20000, 3],
             [500000, 5],
         ], jackpotEnabled: [
+            [0, false],
             [100, true],
         ], jackpotMinimum: [
+            [0, 20],
             [500, 50],
             [10000, 100],
             [500000, 500],
         ], jackpotRate: [
+            [0, 5],
             [200, 10],
             [1000, 20],
             [25000, 50],
         ], comboEnabled: [
+            [0, false],
             [10000, true],
         ], comboIncreasePerSink: [
+            [0, 1],
             [20000, 5],
             [100000, 10],
         ], comboReductionPerPutt: [
+            [0, 1],
             [500000, 0],
         ], autoPuttEnabled: [
-            [50, true]
+            [0, false],
+            [50, true],
         ], autoPuttCooldown: [
+            [0, 4],
             [25, 2],
             [125, 1],
             [625, .5],
@@ -205,16 +196,19 @@ const state = {
             [15000, .1],
             [75000, .01],
         ], autoPuttPower: [
+            [0, 1],
             [100, 2],
             [2000, 3],
             [50000, 4],
             [100000, 5],
         ], autoPuttAim: [
+            [0, 0.5],
             [50, 0.4],
             [500, 0.3],
             [5000, 0.2],
             [500000, 0.1],
         ], won: [
+            [0, false],
             [10000000, true],
         ],
     },
@@ -796,11 +790,18 @@ function redraw() {
     updatePurchaseable()
 }
 
+// ======= Main ========
+
 respawnBall(null)
 $(window).on("resize", resizeCanvas); resizeCanvas()
 $(canvas).on("mousedown mouseup mousemove touchstart touchmove touchend touchcancel", mouse)
 const tickInterval = setInterval(tick, 10)
 updateRequired()
+for (const [k, v] of Object.entries(state.upgrades)) {
+    assert(v.length > 0 && v[0][0] == 0, `${k} upgrade needs starting value`)
+    state.numbers[k] = v[0][1]
+    v.unshift()
+}
 if (DEBUG) $(".debug").show()
 
 $("button").on("click", (e) => {
