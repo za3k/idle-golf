@@ -211,6 +211,15 @@ const state = {
             [5000000, true],
         ],
     },
+    comboColors: [
+        [1, 1, "white"],
+        [2, 4, "#df47b9"],
+        [5, 9, "#3bdbe1"],
+        [10, 99, "#3be184"],
+        [99, 199, "#26b330"],
+        [200, 999, "#fb9c13"],
+        [1000, 1000000, "#fb3113"],
+    ],
 }
 
 var offsetUnits = { x:0, y: 0 }
@@ -762,7 +771,8 @@ function redraw() {
     // Draw the balls
     for (const ball of state.balls) {
         var c = "white"
-        for (const [min, max, color] of comboColors) {
+        const combo = ball.combo
+        for (const [min, max, color] of state.comboColors) {
             if (min <= combo && combo <= max) c = color
         }
         drawCircle(ball.pt, 0.1, c)
