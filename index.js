@@ -745,7 +745,7 @@ function redraw() {
         ctx.restore()
 
         drawCircle(state.mouse.pt, 0.2, "red")
-    } else if (state.mouse.mode == "plan") {
+    } else if (state.mouse.mode == "plan" && state.mouse.pt) {
         // Visual cue that you're in putt mode
         drawCircle(state.mouse.pt, 0.2, "rgba(255, 0, 0, 0.5)")
     }
@@ -798,7 +798,7 @@ updateRequired()
 for (const [k, v] of Object.entries(state.upgrades)) {
     assert(v.length > 0 && v[0][0] == 0, `${k} upgrade needs starting value`)
     state.numbers[k] = v[0][1]
-    v.unshift()
+    v.shift()
 }
 if (DEBUG) $(".debug").show()
 
