@@ -574,8 +574,10 @@ function _displayTop(msg, color) {
     const e = $(`<div class="topMessage">${msg}</div>`)
     if (color) e.css({"color": color})
     $("#playarea").append(e)
-    setTimeout(() => e.remove(), 4000)
+    //setTimeout(() => e.remove(), 4000)
 }
+
+setInterval(() => displayTop("+inf to jackpot", "blue"), 1000)
 
 function displayBall(ball, msg, color) {
     // Display a little message of the ball, which automatically fades and deletes itself later, while drifting up.
@@ -666,6 +668,7 @@ function updatePurchaseable() {
         if (v.length == 0) { // Sold out
             details = `(MAX)`
             button.attr("disabled", '')
+            button.addClass("maxed")
         } else {
             const [cost, next] = v[0]
             const curr = state.numbers[k]
@@ -800,6 +803,7 @@ for (const [k, v] of Object.entries(state.upgrades)) {
     state.numbers[k] = v[0][1]
     v.shift()
 }
+updateRequired()
 if (DEBUG) $(".debug").show()
 
 $("button").on("click", (e) => {
