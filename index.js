@@ -165,9 +165,9 @@ const state = {
             [100, true],
         ], jackpotMinimum: [
             [0, 20],
-            [500, 50],
-            [10000, 100],
-            [500000, 500],
+            [100, 50],
+            [500, 100],
+            [2000, 500],
         ], jackpotRate: [
             [0, 5],
             [200, 10],
@@ -175,14 +175,14 @@ const state = {
             [25000, 50],
         ], comboEnabled: [
             [0, false],
-            [10000, true],
+            [1000, true],
         ], comboIncreasePerSink: [
             [0, 1],
-            [20000, 5],
-            [100000, 10],
+            [2000, 5],
+            [10000, 10],
         ], comboReductionPerPutt: [
-            [0, 1],
-            [500000, 0],
+            [0, 0],
+            [10000, 0],
         ], autoPuttEnabled: [
             [0, false],
             [50, true],
@@ -623,7 +623,7 @@ function ballSunk(ball) {
     var gain = state.numbers.holePayout * state.numbers.globalMult * ball.combo
     if (ball.numPutts == 1) { // Hole-in-one
         gain *= 2
-        if (ball.numPutts == 1 && state.numbers.jackpot) { // Hole-in-one
+        if (ball.numPutts == 1 && state.numbers.jackpot && state.numbers.jackpotEnabled) { // Hole-in-one
             gain += state.numbers.jackpot
             state.numbers.jackpot = state.numbers.jackpotMinimum
             displayTop(`Jackpot! +$${gain}`, "gold")
@@ -636,12 +636,6 @@ function ballSunk(ball) {
     state.numbers.money += gain
 
     bumpJackpot(ball)
-
-    if (ball.numPutts == 1 && state.numbers.jackpot) { // Hole-in-one
-        const payout = state.numbers.jackpot
-        displayTop(`Jackpot! +$${payout}`, "gold")
-        state.numbers.money += payout
-    }
 
     // idea: Make respawning take a while
     respawnBall(ball) 
@@ -681,7 +675,7 @@ function updatePurchaseable() {
             const curr = state.numbers[k]
             details = `($${cost}, ${curr} -> ${next})`
 
-            if (next == true) details = `($${cost})` // Enable flag
+            if (next === true) details = `($${cost})` // Enable flag
 
             avail = state.numbers.money >= cost
         }
@@ -693,7 +687,7 @@ function updatePurchaseable() {
 
 function updateRequired() {
     for (const [k, v] of Object.entries(state.numbers)) {
-        if (v == false || v == true) {
+        if (v === false || v === true) {
             $(`[requires=${k}]`).toggle(v)
         }
     }
