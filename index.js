@@ -583,7 +583,7 @@ function _displayTop(msg, color) {
     const e = $(`<div class="topMessage">${msg}</div>`)
     if (color) e.css({"color": color})
     $("#playarea").append(e)
-    //setTimeout(() => e.remove(), 4000)
+    setTimeout(() => e.remove(), 4000)
 }
 
 function displayBall(ball, msg, color) {
