@@ -208,7 +208,7 @@ const state = {
             [500000, 0.1],
         ], won: [
             [0, false],
-            [5000000, true],
+            [10000000, true],
         ],
     },
     comboColors: [
@@ -614,13 +614,13 @@ function respawnBall(ball) {
 }
 function bumpJackpot(ball) {
     if (state.numbers.jackpotEnabled) {
-        const bump = state.numbers.jackpotRate * state.numbers.globalMult
+        const bump = state.numbers.jackpotRate * state.numbers.globalMult * ball.combo
         state.numbers.jackpot += bump
         displayBall(ball, `+$${bump} in jackpot`, "gold")
     }
 }
 function ballSunk(ball) {
-    var gain = state.numbers.holePayout * state.numbers.globalMult
+    var gain = state.numbers.holePayout * state.numbers.globalMult * ball.combo
     if (ball.numPutts == 1) { // Hole-in-one
         gain *= 2
         if (ball.numPutts == 1 && state.numbers.jackpot) { // Hole-in-one
