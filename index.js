@@ -577,8 +577,6 @@ function _displayTop(msg, color) {
     //setTimeout(() => e.remove(), 4000)
 }
 
-setInterval(() => displayTop("+inf to jackpot", "blue"), 1000)
-
 function displayBall(ball, msg, color) {
     // Display a little message of the ball, which automatically fades and deletes itself later, while drifting up.
     const e = $(`<div class="ballMessage">${msg}</div>`)
@@ -763,7 +761,11 @@ function redraw() {
 
     // Draw the balls
     for (const ball of state.balls) {
-        drawCircle(ball.pt, 0.1, "white")
+        var c = "white"
+        for (const [min, max, color] of comboColors) {
+            if (min <= combo && combo <= max) c = color
+        }
+        drawCircle(ball.pt, 0.1, c)
     }
 
     if (state.numbers.won) {
