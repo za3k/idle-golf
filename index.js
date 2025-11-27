@@ -73,27 +73,44 @@ const state = {
         money: 0,
         jackpot: 0,
         numBallsCurrent: 0,
+
+        manualPuttPower: 1,
+        //manualPuttMax: 5,
         numBallsMax: 1,
         friction: 1,
+        holeSize: 0.1,
+        holePayout: 1,
+        globalMult: 1,
         jackpotEnabled: false,
-        manualPuttMax: 5,
         jackpotMinimum: 0,
         jackpotRate: 1,
-        holePayout: 1,
-        manualPuttPower: 1,
+        comboEnabled: false,
+        comboIncreasePerSink: 1,
+        comboReductionPerPutt: 1,
         autoPuttEnabled: false,
         autoPuttCooldown: 4,
         autoPuttPower: 1,
         autoPuttAim: 0.5,
-        globalMult: 1,
-        comboEnabled: false,
-        comboReductionPerPutt: 1,
-        comboIncreasePerSink: 1,
-        holeSize: 0.1,
         won: false,
     },
     lastAutoPutt: new Date(),
     upgrades: {
+        // To make everything else look identical
+        fake: [
+
+        ], manualPuttPower: [
+            [1, 1.5],
+            [1, 2],
+            [1, 3],
+            [1, 4],
+            [1, 5],
+        /*
+        ], manualPuttMax: [
+            [1, 2],
+            [2, 3],
+            [3, 4],
+            [4, 5],
+        */
         numBallsMax: [ 
             [2, 2],
             [2, 3],
@@ -120,6 +137,31 @@ const state = {
             [1, 0.03],
             [1, 0.02],
             [1, 0.01],
+        ], holeSize: [
+            [1, 0.15],
+            [1, 0.2],
+            [1, 0.3],
+            [1, 0.4],
+            [1, 0.5],
+            [1, 1],
+            [1, 2],
+            [1, 3],
+            [1, 4],
+            [1, 5],
+            [1, 10],
+        ], holePayout: [
+            [10, 2],
+            [20, 3],
+            [30, 4],
+            [40, 5],
+        ], globalMult: [
+            [1, 2],
+            [1, 3],
+            [1, 10],
+            [1, 100],
+            [1, 1000],
+        ], jackpotEnabled: [
+            [1000, true],
         ], jackpotMinimum: [
             [1, 10],
             [1, 100],
@@ -129,24 +171,16 @@ const state = {
             [10, 10],
             [10, 100],
             [10, 1000],
-        ], holePayout: [
-            [10, 2],
-            [20, 3],
-            [30, 4],
-            [40, 5],
-        ], manualPuttPower: [
-            [1, 1.5],
+        ], comboEnabled: [
+            [100, true],
+        ], comboIncreasePerSink: [
             [1, 2],
             [1, 3],
             [1, 4],
-            [1, 5],
-        /*
-        ], manualPuttMax: [
-            [1, 2],
-            [2, 3],
-            [3, 4],
-            [4, 5],
-        */
+            [1, 8],
+            [1, 16],
+        ], comboReductionPerPutt: [
+            [1, 10],
         ], autoPuttEnabled: [
             [3, true]
         ], autoPuttCooldown: [
@@ -170,40 +204,9 @@ const state = {
             [1, 0.05],
             [1, 0.03],
             [1, 0.01],
-        ], jackpotEnabled: [
-            [1000, true],
-        ], globalMult: [
-            [1, 2],
-            [1, 3],
-            [1, 10],
-            [1, 100],
-            [1, 1000],
-        ], comboEnabled: [
-            [100, true],
-        ], comboReductionPerPutt: [
-            [1, 10],
-        ], comboIncreasePerSink: [
-            [1, 2],
-            [1, 3],
-            [1, 4],
-            [1, 8],
-            [1, 16],
         ], won: [
             [1000000, true],
-        ], holeSize: [
-            [1, 0.15],
-            [1, 0.2],
-            [1, 0.3],
-            [1, 0.4],
-            [1, 0.5],
-            [1, 1],
-            [1, 2],
-            [1, 3],
-            [1, 4],
-            [1, 5],
-            [1, 10],
         ],
-
     },
 }
 
