@@ -1,6 +1,7 @@
 const MANUAL_IMPULSE = 2
 const AUTO_IMPULSE = 3
 const FRICTION_SLOWDOWN = 1 // Scale this with impulse.
+const DEBUG = new URLSearchParams(window.location.search).has("debug")
 
 // Equal-size ball combo merging -- would require collision, probably won't do
 
@@ -75,15 +76,15 @@ const state = {
         numBallsCurrent: 0,
 
         manualPuttPower: 1,
-        //manualPuttMax: 5,
+        manualPuttMax: 5, // No upgrade
         numBallsMax: 1,
         friction: 1,
         holeSize: 0.1,
-        holePayout: 1,
+        holePayout: 10,
         globalMult: 1,
         jackpotEnabled: false,
-        jackpotMinimum: 0,
-        jackpotRate: 1,
+        jackpotMinimum: 20,
+        jackpotRate: 5,
         comboEnabled: false,
         comboIncreasePerSink: 1,
         comboReductionPerPutt: 1,
@@ -96,14 +97,12 @@ const state = {
     lastAutoPutt: new Date(),
     upgrades: {
         // To make everything else look identical
-        fake: [
-
-        ], manualPuttPower: [
+        manualPuttPower: [
             [1, 1.5],
-            [1, 2],
-            [1, 3],
-            [1, 4],
-            [1, 5],
+            [20, 2],
+            [50, 3],
+            [100, 4],
+            [200, 5],
         /*
         ], manualPuttMax: [
             [1, 2],
@@ -111,101 +110,112 @@ const state = {
             [3, 4],
             [4, 5],
         */
-        numBallsMax: [ 
-            [2, 2],
-            [2, 3],
-            [2, 4],
-            [2, 5],
-            [2, 6],
-            [2, 7],
-            [2, 8],
-            [2, 9],
-            [2, 10],
-            [2, 20],
-            [2, 40],
-        ], friction: [
-            [1, 0.8],
-            [1, 0.7],
-            [1, 0.6],
-            [1, 0.5],
-            [1, 0.4],
-            [1, 0.3],
-            [1, 0.2],
-            [1, 0.1],
-            [1, 0.05],
-            [1, 0.04],
-            [1, 0.03],
-            [1, 0.02],
-            [1, 0.01],
-        ], holeSize: [
-            [1, 0.15],
-            [1, 0.2],
-            [1, 0.3],
-            [1, 0.4],
-            [1, 0.5],
-            [1, 1],
-            [1, 2],
-            [1, 3],
-            [1, 4],
-            [1, 5],
-            [1, 10],
-        ], holePayout: [
+        ], numBallsMax: [ 
             [10, 2],
             [20, 3],
             [30, 4],
             [40, 5],
+            [50, 6],
+            [60, 7],
+            [70, 8],
+            [80, 9],
+            [90, 10],
+            [100, 11],
+            [110, 12],
+            [120, 13],
+            [130, 14],
+            [140, 15],
+            [150, 16],
+            [160, 17],
+            [170, 18],
+            [180, 19],
+            [190, 20],
+            [200, 21],
+            [210, 22],
+            [220, 23],
+            [230, 24],
+            [240, 25],
+            [250, 26],
+            [260, 27],
+            [270, 28],
+            [280, 29],
+            [290, 30],
+            [300, 31],
+            [310, 32],
+            [320, 33],
+            [330, 34],
+            [340, 35],
+            [350, 36],
+            [360, 37],
+            [370, 38],
+            [380, 39],
+            [390, 40],
+        ], friction: [
+            [100, 0.8],
+            [500, 0.7],
+            [2500, 0.6],
+            [7500, 0.5],
+            [37500, 0.4],
+        ], holeSize: [
+            [10, 0.15],
+            [100, 0.2],
+            [1000, 0.3],
+            [10000, 0.4],
+            [100000, 0.5],
+            [1000000, 1],
+            [10000000, 2],
+            [100000000, 3],
+            [1000000000, 4],
+            [10000000000, 5],
+            [100000000000, 10],
+        ], holePayout: [
+            [20, 20],
+            [400, 50],
+            [8000, 100],
+            [16000, 200],
+            [320000, 500],
         ], globalMult: [
-            [1, 2],
-            [1, 3],
-            [1, 10],
-            [1, 100],
-            [1, 1000],
+            [1000, 2],
+            [20000, 3],
+            [500000, 5],
         ], jackpotEnabled: [
-            [1000, true],
-        ], jackpotMinimum: [
-            [1, 10],
-            [1, 100],
-            [1, 1000],
-        ], jackpotRate: [
-            [10, 2],
-            [10, 10],
-            [10, 100],
-            [10, 1000],
-        ], comboEnabled: [
             [100, true],
+        ], jackpotMinimum: [
+            [500, 50],
+            [10000, 100],
+            [500000, 500],
+        ], jackpotRate: [
+            [200, 10],
+            [1000, 20],
+            [25000, 50],
+        ], comboEnabled: [
+            [10000, true],
         ], comboIncreasePerSink: [
-            [1, 2],
-            [1, 3],
-            [1, 4],
-            [1, 8],
-            [1, 16],
+            [20000, 5],
+            [100000, 10],
         ], comboReductionPerPutt: [
-            [1, 10],
+            [500000, 0],
         ], autoPuttEnabled: [
-            [3, true]
+            [50, true]
         ], autoPuttCooldown: [
-            [1, 2],
-            [1, 1],
-            [1, .5],
-            [1, .25],
-            [1, .1],
-            [1, .01],
+            [25, 2],
+            [125, 1],
+            [625, .5],
+            [3125, .25],
+            [15000, .1],
+            [75000, .01],
         ], autoPuttPower: [
-            [1, 2],
-            [1, 3],
-            [1, 4],
-            [1, 5],
-            [1, 10],
+            [100, 2],
+            [2000, 3],
+            [50000, 4],
+            [100000, 5],
         ], autoPuttAim: [
-            [1, 0.4],
-            [1, 0.3],
-            [1, 0.2],
-            [1, 0.1],
-            [1, 0.05],
-            [1, 0.03],
-            [1, 0.01],
+            [50, 0.4],
+            [500, 0.3],
+            [5000, 0.2],
+            [500000, 0.1],
         ], won: [
-            [1000000, true],
+            [10000000, true],
         ],
     },
 }
@@ -791,6 +801,7 @@ $(window).on("resize", resizeCanvas); resizeCanvas()
 $(canvas).on("mousedown mouseup mousemove touchstart touchmove touchend touchcancel", mouse)
 const tickInterval = setInterval(tick, 10)
 updateRequired()
+if (DEBUG) $(".debug").show()
 
 $("button").on("click", (e) => {
     const for_ = $(e.currentTarget).attr("for")
@@ -804,7 +815,7 @@ $("button").on("click", (e) => {
 
     // Check current purchase price of the button
     const price = upgrades[0][0]
-    if (false && price > state.numbers.money) {
+    if (!DEBUG && price > state.numbers.money) {
         displayTop(`Not enough money`, "red")
         return
     }
