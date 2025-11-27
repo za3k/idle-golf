@@ -73,7 +73,6 @@ const state = {
     numbers: {
         money: 0,
         jackpot: 0,
-        numBallsCurrent: 0,
     },
     lastAutoPutt: new Date(),
     upgrades: {
@@ -595,7 +594,6 @@ function respawnBall(ball) {
     if (!ball) {
         ball = { combo: 1 }
         state.balls.push(ball)
-        state.numbers.numBallsCurrent = state.balls.length
     }
 
     var pt = {...state.level.start}
@@ -827,7 +825,7 @@ $("button").on("click", (e) => {
 
     state.numbers[for_] = upgrades[0][1]
     state.numbers.jackpot = Math.max(state.numbers.jackpot, state.numbers.jackpotMinimum)
-    while (state.numbers.numBallsMax > state.numbers.numBallsCurrent) respawnBall(null)
+    while (state.numbers.numBallsMax > state.balls.length) respawnBall(null)
 
     upgrades.splice(0, 1)
 
