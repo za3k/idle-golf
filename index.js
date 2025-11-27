@@ -71,44 +71,26 @@ const state = {
     },
     numbers: {
         money: 0,
-            // DONE: Buy upgrades
-            // DONE: Grey out unbuyable things
         jackpot: 0,
-            // DONE: Increase on every putt
-            // DONE: Win on hole-in-one
         numBallsCurrent: 0,
         numBallsMax: 1,
-            // DONE: When this increases, add a ball, actually test multiball
         friction: 1,
-            // DONE: Make this higher to start
         jackpotEnabled: false,
-            // DONE: Hide display, buy options until enabled
         manualPuttMax: 5,
         jackpotMinimum: 0,
-            // DONE: On winning the jackpot, reset to this value
-            // DONE: On upgrading the minimum, set it to this value
         jackpotRate: 1,
-            // DONE: This is how much the jackpot should increase by on a putt
         holePayout: 1,
         manualPuttPower: 1,
-            // DONE: Actually restrict putt power
         autoPuttEnabled: false,
-            // DONE: Do auto-putts
         autoPuttCooldown: 4,
-            // DONE: Have a cooldown
         autoPuttPower: 1,
-            // DONE: Use this instead of a const
         autoPuttAim: 0.5,
-            // DONE: Use the direction of the hole, plus a random offset
         globalMult: 1,
-            // DONE: jackpot, hole sink
         comboEnabled: false,
         comboReductionPerPutt: 1,
-            // DONE: Reduce combo on putt (minimum x1)
         comboIncreasePerSink: 1,
-            // DONE: Increase combo on hole-in-one (per ball)
-        won: false,
         holeSize: 0.1,
+        won: false,
     },
     lastAutoPutt: new Date(),
     upgrades: {
